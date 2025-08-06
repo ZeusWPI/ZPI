@@ -95,10 +95,32 @@ pub async fn post_image(session: Session, mut multipart: Multipart) -> impl Into
     }
 }
 
-pub async fn get_image(Path(id): Path<u32>) -> impl IntoResponse {
+#[derive(Deserialize)]
+struct PlaceholderQuery {
+    placeholder: Option<bool>,
+}
+
+pub async fn get_image(
+    Query(params): Query<PlaceholderQuery>,
+    Path(id): Path<u32>,
+) -> impl IntoResponse {
     let path = image_path(id);
-    let file = tokio::fs::File::open(path).await.unwrap();
-    Body::from_stream(ReaderStream::new(file))
+    match tokio::fs::File::open(path).await {
+        Err(_) => {
+            if let Some(placeholder) = params.placeholder
+                && placeholder
+            {
+                Body::from_stream(ReaderStream::new(
+                    tokio::fs::File::open("./static/placeholder.jpg")
+                        .await
+                        .unwrap(),
+                ))
+            } else {
+                panic!();
+            }
+        }
+        Ok(file) => Body::from_stream(ReaderStream::new(file)),
+    }
 }
 
 pub async fn login(session: Session) -> impl IntoResponse {
