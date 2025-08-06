@@ -1,5 +1,7 @@
 use std::{env, path::PathBuf, sync::LazyLock};
 
+use anyhow::Result;
+
 use axum::{
     Router,
     body::Body,
@@ -37,9 +39,7 @@ async fn main() {
         .init();
 
     let sess_store = MemoryStore::default();
-    let sess_mw = SessionManagerLayer::new(sess_store)
-        .with_same_site(SameSite::Lax)
-        .with_http_only(false);
+    let sess_mw = SessionManagerLayer::new(sess_store).with_same_site(SameSite::Lax);
 
     let app = Router::new()
         .route("/", get(index))

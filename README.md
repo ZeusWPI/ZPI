@@ -16,10 +16,11 @@ GET `/image/{zauth_user_id}` -> gives that user's profile image
 
 # config
 
-| env var               | explaination                                               |
+see [env example](./.env.example) for an example
+| env var | explaination |
 | --------------------- | ---------------------------------------------------------- |
-| `ZAUTH_URL`           | base url of zauth                                          |
-| `ZAUTH_CALLBACK_PATH` | callback url of ZPI                                        |
-| `ZAUTH_CLIENT_ID`     | zauth client id                                            |
-| `ZAUTH_CLIENT_SECRET` | zauth client secret                                        |
-| `IMAGE_PATH`          | path where the profile images will be stored and retrieved |
+| `ZAUTH_URL` | base url of zauth |
+| `ZAUTH_CALLBACK_PATH` | callback url of ZPI |
+| `ZAUTH_CLIENT_ID` | zauth client id |
+| `ZAUTH_CLIENT_SECRET` | zauth client secret |
+| `IMAGE_PATH` | path where the profile images will be stored and retrieved |
