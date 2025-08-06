@@ -4,7 +4,10 @@ let people upload profile imagess and make them available on an endpoint.
 
 # running
 
-`cargo run`
+```
+cp .env.example .env
+cargo run
+```
 
 # how it works
 
