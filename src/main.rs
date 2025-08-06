@@ -96,7 +96,7 @@ pub async fn post_image(session: Session, mut multipart: Multipart) -> impl Into
 }
 
 #[derive(Deserialize)]
-struct PlaceholderQuery {
+pub struct PlaceholderQuery {
     placeholder: Option<bool>,
 }
 
