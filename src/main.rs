@@ -5,7 +5,7 @@ use anyhow::Result;
 use axum::{
     Router,
     body::Body,
-    extract::{Multipart, Path, Query},
+    extract::{DefaultBodyLimit, Multipart, Path, Query},
     response::{Html, IntoResponse, Redirect},
     routing::get,
 };
@@ -49,6 +49,7 @@ async fn main() {
         .route("/image", get(image_index).post(post_image))
         .route("/image/{id}", get(get_image))
         .layer(sess_mw)
+        .layer(DefaultBodyLimit::max(10_485_760))
         .layer(TraceLayer::new_for_http());
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
@@ -71,31 +72,32 @@ pub async fn image_index() -> impl IntoResponse {
 
 pub async fn post_image(session: Session, mut multipart: Multipart) -> impl IntoResponse {
     match session.get::<ZauthUser>("user").await.unwrap() {
-        None => Redirect::to("/login"),
+        None => "Not logged in!".to_owned(),
         Some(user) => {
             while let Some(field) = multipart.next_field().await.unwrap() {
                 if let Some("image_file") = field.name() {
                     let content_type = field.content_type().unwrap_or("").to_string();
-                    if content_type != "image/jpeg" {
-                        return Redirect::to("/");
+                    if content_type != "image/jpeg" && content_type != "image/png" {
+                        return "Please upload a jpeg or png".to_owned();
                     }
                     let data = field.bytes().await.unwrap();
 
-                    let path =
-                        PathBuf::from(IMAGE_PATH.to_string()).join(user.id.to_string() + ".jpg");
+                    let path = image_path(user.id);
                     fs::write(path, data).await.unwrap();
-                    return Redirect::to(&("/image/".to_string() + &user.id.to_string()));
+                    let body = format!(
+                        "Success! view your image <a href=\"/image/{}\">here</a>",
+                        user.id
+                    );
+                    return body;
                 }
             }
-            Redirect::to("/image")
+            "File not found".to_owned()
         }
     }
 }
 
 pub async fn get_image(Path(id): Path<u32>) -> impl IntoResponse {
-    let path = std::path::PathBuf::from(IMAGE_PATH.to_string());
-    let path = path.join(id.to_string() + ".jpg");
-    dbg!(&path);
+    let path = image_path(id);
     let file = tokio::fs::File::open(path).await.unwrap();
     Body::from_stream(ReaderStream::new(file))
 }
@@ -131,7 +133,7 @@ pub struct ZauthToken {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct ZauthUser {
-    id: i32,
+    id: u32,
     username: String,
 }
 
@@ -183,4 +185,10 @@ pub async fn callback(Query(params): Query<Callback>, session: Session) -> impl 
     session.clear().await;
     session.insert("user", zauth_user).await.unwrap();
     Redirect::to("/")
+}
+
+fn image_path(user_id: u32) -> PathBuf {
+    let path = PathBuf::from(IMAGE_PATH.to_string());
+    path.join(user_id.to_string() + ".jpg");
+    path
 }
