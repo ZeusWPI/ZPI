@@ -1,7 +1,5 @@
 use std::{env, path::PathBuf, sync::LazyLock};
 
-use anyhow::Result;
-
 use axum::{
     Router,
     body::Body,
@@ -28,7 +26,6 @@ static IMAGE_PATH: LazyLock<String> =
     LazyLock::new(|| env::var("IMAGE_PATH").expect("IMAGE_PATH not present"));
 
 static LOGIN_HTML: &str = include_str!("../static/login.html");
-static LOGGEDIN_HTML: &str = include_str!("../static/loggedin.html");
 static UPLOAD_HTML: &str = include_str!("../static/upload.html");
 
 #[tokio::main]
@@ -60,7 +57,9 @@ pub async fn index(session: Session) -> impl IntoResponse {
     match session.get::<ZauthUser>("user").await.unwrap() {
         None => Html(LOGIN_HTML.to_string()),
         Some(user) => {
-            let html = LOGGEDIN_HTML.replace("{{username}}", &user.username);
+            let html = UPLOAD_HTML
+                .replace("{{username}}", &user.username)
+                .replace("{{user_id}}", &user.id.to_string());
             Html(html)
         }
     }
@@ -188,7 +187,5 @@ pub async fn callback(Query(params): Query<Callback>, session: Session) -> impl 
 }
 
 fn image_path(user_id: u32) -> PathBuf {
-    let path = PathBuf::from(IMAGE_PATH.to_string());
-    path.join(user_id.to_string() + ".jpg");
-    path
+    PathBuf::from(IMAGE_PATH.to_string()).join(user_id.to_string() + ".jpg")
 }
