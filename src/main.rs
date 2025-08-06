@@ -1,10 +1,9 @@
 use std::{env, path::PathBuf, sync::LazyLock};
 
 use axum::{
-    Json, Router,
+    Router,
     body::Body,
     extract::{Multipart, Path, Query},
-    http::StatusCode,
     response::{Html, IntoResponse, Redirect},
     routing::get,
 };
