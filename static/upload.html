@@ -4,7 +4,9 @@
         <div style="color: #ff7f00">ZPI</div>
         <div class="column">
             <div>
-                <div class="card">Hallo {{username}}<img src="/image/{{user_id}}" /></div>
+                <div class="card">
+                    Hallo {{username}}<img src="/image/{{user_id}}?placeholder=true" />
+                </div>
                 <form class="card" action="/image" method="post" enctype="multipart/form-data">
                     <label for="upload">New profile image</label>
                     <input type="file" id="upload" name="image_file" accept="image/jpeg" />
