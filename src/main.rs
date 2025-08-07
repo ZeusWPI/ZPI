@@ -71,11 +71,14 @@ pub async fn post_image(session: Session, mut multipart: Multipart) -> Result<Re
         Some(user) => {
             while let Some(field) = multipart.next_field().await? {
                 if let Some("image_file") = field.name() {
-                    let content_type = field.content_type().unwrap_or("").to_string();
-                    if content_type != "image/jpeg" && content_type != "image/png" {
-                        return Err(AppError::WrongFileType);
-                    }
                     let data = field.bytes().await?;
+                    match infer::get(&data)
+                        .ok_or(AppError::WrongFileType)?
+                        .mime_type()
+                    {
+                        "image/jpeg" => {}
+                        _ => return Err(AppError::WrongFileType),
+                    }
 
                     let path = image_path(user.id);
                     fs::write(path, data).await?;
