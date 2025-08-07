@@ -1,15 +1,15 @@
 <!doctype html>
 <html>
     <body>
-        <div style="color: #ff7f00;">ZPI</div>
+        <div style="color: #ff7f00">ZPI</div>
         <div class="column">
             <div>
-            <div class="card">Hallo {{username}}<img src="/image/{{user_id}}"></d></div>
-            <form class="card" action="/image" method="post" enctype="multipart/form-data">
-                <label for="upload">New image:</label>
-                <input type="file" id="upload" name="image_file" accept="image/jpeg" />
-                <input type="submit" value="Upload" />
-            </form>
+                <div class="card">Hallo {{username}}<img src="/image/{{user_id}}" /></div>
+                <form class="card" action="/image" method="post" enctype="multipart/form-data">
+                    <label for="upload">New image:</label>
+                    <input type="file" id="upload" name="image_file" accept="image/jpeg" />
+                    <input type="submit" value="Upload" />
+                </form>
             </div>
         </div>
     </body>
