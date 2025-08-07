@@ -80,7 +80,7 @@ pub async fn post_image(session: Session, mut multipart: Multipart) -> Result<Re
                         _ => return Err(AppError::WrongFileType),
                     }
 
-                    let path = image_path(user.id);
+                    let path = image_path(user.id, None);
                     fs::write(path, data).await?;
                     return Ok(Redirect::to("/"));
                 }
@@ -93,14 +93,16 @@ pub async fn post_image(session: Session, mut multipart: Multipart) -> Result<Re
 #[derive(Deserialize)]
 pub struct PlaceholderQuery {
     placeholder: Option<bool>,
+    size: Option<u32>,
 }
 
 pub async fn get_image(
     Query(params): Query<PlaceholderQuery>,
     Path(id): Path<u32>,
 ) -> Result<Body, AppError> {
-    let path = image_path(id);
-    match tokio::fs::File::open(path).await {
+    let path = image_path(id, params.size);
+    let file = tokio::fs::File::open(path).await;
+    match file {
         Err(_) => match params.placeholder {
             Some(true) => Ok(Body::from(PLACEHOLDER)),
             _ => Err(AppError::ImageNotFound),
@@ -195,6 +197,10 @@ pub async fn callback(
     Ok(Redirect::to("/"))
 }
 
-fn image_path(user_id: u32) -> PathBuf {
-    PathBuf::from(IMAGE_PATH.to_string()).join(user_id.to_string() + ".jpg")
+fn image_path(user_id: u32, size_opt: Option<u32>) -> PathBuf {
+    let filename = match size_opt {
+        Some(size) => format!("{}.{}.jpg", user_id, size),
+        None => format!("{}.jpg", user_id),
+    };
+    PathBuf::from(IMAGE_PATH.to_string()).join(filename)
 }
