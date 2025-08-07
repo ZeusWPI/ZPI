@@ -48,12 +48,30 @@ impl From<ReqwestError> for AppError {
 impl IntoResponse for AppError {
     fn into_response(self) -> Response {
         let (code, message) = match self {
-            AppError::Session(_) => (StatusCode::INTERNAL_SERVER_ERROR, "Session error"),
-            AppError::Zauth(_) => (StatusCode::INTERNAL_SERVER_ERROR, "Zauth error"),
-            AppError::Reqwest(_) => (StatusCode::INTERNAL_SERVER_ERROR, "Reqwest error"),
-            AppError::Io(_) => (StatusCode::INTERNAL_SERVER_ERROR, "Io error"),
-            AppError::Internal(_) => (StatusCode::INTERNAL_SERVER_ERROR, "Internal error"),
-            AppError::Multipart(_) => (StatusCode::BAD_REQUEST, "Multipart error"),
+            AppError::Session(err) => {
+                tracing::error!("Session error {}", err);
+                (StatusCode::INTERNAL_SERVER_ERROR, "Session error")
+            }
+            AppError::Zauth(err) => {
+                tracing::error!("Zauth error {}", err);
+                (StatusCode::INTERNAL_SERVER_ERROR, "Zauth error")
+            }
+            AppError::Reqwest(err) => {
+                tracing::error!("Reqwest error {}", err);
+                (StatusCode::INTERNAL_SERVER_ERROR, "Reqwest error")
+            }
+            AppError::Io(err) => {
+                tracing::error!("Io error {}", err);
+                (StatusCode::INTERNAL_SERVER_ERROR, "Io error")
+            }
+            AppError::Internal(err) => {
+                tracing::error!("Internal error {}", err);
+                (StatusCode::INTERNAL_SERVER_ERROR, "Internal error")
+            }
+            AppError::Multipart(err) => {
+                tracing::error!("Multipart error {}", err);
+                (StatusCode::BAD_REQUEST, "Multipart error")
+            }
             AppError::WrongFileType => (StatusCode::BAD_REQUEST, "Please give a jpg file"),
             AppError::ImageNotFound => (StatusCode::NOT_FOUND, "No image for this user"),
             AppError::NoFile => (StatusCode::BAD_REQUEST, "Please give a file"),
