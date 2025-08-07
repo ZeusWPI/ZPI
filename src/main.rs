@@ -1,4 +1,4 @@
-use std::{env, path::PathBuf, sync::LazyLock};
+use std::{env, sync::LazyLock};
 
 use axum::{
     Router,
@@ -8,15 +8,18 @@ use axum::{
     routing::{get, post},
 };
 use error::AppError;
+use image::ZPIImage;
 use pages::Page;
 use rand::distr::{Alphanumeric, SampleString};
 use serde::{Deserialize, Serialize};
-use tokio::fs;
 use tokio_util::io::ReaderStream;
 use tower_http::trace::TraceLayer;
 use tower_sessions::{MemoryStore, Session, SessionManagerLayer, cookie::SameSite};
 
+use crate::image::image_path;
+
 mod error;
+mod image;
 mod pages;
 
 static ZAUTH_URL: LazyLock<String> =
@@ -27,17 +30,23 @@ static ZAUTH_CLIENT_ID: LazyLock<String> =
     LazyLock::new(|| env::var("ZAUTH_CLIENT_ID").expect("ZAUTH_CLIENT_ID not present"));
 static ZAUTH_CLIENT_SECRET: LazyLock<String> =
     LazyLock::new(|| env::var("ZAUTH_CLIENT_SECRET").expect("ZAUTH_CLIENT_SECRET not present"));
-static IMAGE_PATH: LazyLock<String> =
-    LazyLock::new(|| env::var("IMAGE_PATH").expect("IMAGE_PATH not present"));
+static LOG_LEVEL: LazyLock<String> =
+    LazyLock::new(|| env::var("LOG_LEVEL").expect("LOG_LEVEL not present"));
 
 static PLACEHOLDER: &[u8] = include_bytes!("../static/placeholder.jpg");
 
 #[tokio::main]
 async fn main() {
     let _ = dotenvy::dotenv();
-    tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::DEBUG)
-        .init();
+
+    let log_level = match LOG_LEVEL.as_str() {
+        "DEBUG" => tracing::Level::DEBUG,
+        "INFO" => tracing::Level::INFO,
+        "WARN" => tracing::Level::WARN,
+        _ => tracing::Level::INFO,
+    };
+
+    tracing_subscriber::fmt().with_max_level(log_level).init();
 
     let sess_store = MemoryStore::default();
     let sess_mw = SessionManagerLayer::new(sess_store).with_same_site(SameSite::Lax);
@@ -80,8 +89,9 @@ pub async fn post_image(session: Session, mut multipart: Multipart) -> Result<Re
                         _ => return Err(AppError::WrongFileType),
                     }
 
-                    let path = image_path(user.id, None);
-                    fs::write(path, data).await?;
+                    let image = ZPIImage::from_data(&data, user.id);
+                    image.save_multiple_resized(&[64, 128, 256]).await?;
+                    image.save_original().await?;
                     return Ok(Redirect::to("/"));
                 }
             }
@@ -195,12 +205,4 @@ pub async fn callback(
     session.clear().await;
     session.insert("user", zauth_user).await?;
     Ok(Redirect::to("/"))
-}
-
-fn image_path(user_id: u32, size_opt: Option<u32>) -> PathBuf {
-    let filename = match size_opt {
-        Some(size) => format!("{}.{}.jpg", user_id, size),
-        None => format!("{}.jpg", user_id),
-    };
-    PathBuf::from(IMAGE_PATH.to_string()).join(filename)
 }

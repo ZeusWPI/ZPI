@@ -2,6 +2,8 @@ use axum::{
     extract::multipart::MultipartError,
     response::{IntoResponse, Response},
 };
+use fast_image_resize::ResizeError;
+use image::ImageError;
 use reqwest::Error as ReqwestError;
 use reqwest::StatusCode;
 use std::io::Error as IoError;
@@ -16,6 +18,9 @@ pub enum AppError {
     Internal(String),
     Zauth(String),
     Reqwest(ReqwestError),
+    Image(ImageError),
+    Resize(ResizeError),
+    ImageResTooLarge,
     ImageNotFound,
     WrongFileType,
     NoFile,
@@ -45,6 +50,18 @@ impl From<ReqwestError> for AppError {
     }
 }
 
+impl From<ImageError> for AppError {
+    fn from(value: ImageError) -> Self {
+        AppError::Image(value)
+    }
+}
+
+impl From<ResizeError> for AppError {
+    fn from(value: ResizeError) -> Self {
+        AppError::Resize(value)
+    }
+}
+
 impl IntoResponse for AppError {
     fn into_response(self) -> Response {
         let (code, message) = match self {
@@ -71,6 +88,18 @@ impl IntoResponse for AppError {
             AppError::Multipart(err) => {
                 tracing::error!("Multipart error {}", err);
                 (StatusCode::BAD_REQUEST, "Multipart error")
+            }
+            AppError::ImageResTooLarge => (
+                StatusCode::BAD_REQUEST,
+                "Maximum image resolution is 10k x 10k pixels",
+            ),
+            AppError::Resize(err) => {
+                tracing::error!("Resize error {}", err);
+                (StatusCode::INTERNAL_SERVER_ERROR, "Resize error")
+            }
+            AppError::Image(err) => {
+                tracing::error!("Image error {}", err);
+                (StatusCode::INTERNAL_SERVER_ERROR, "Image error")
             }
             AppError::WrongFileType => (StatusCode::BAD_REQUEST, "Please give a jpg file"),
             AppError::ImageNotFound => (StatusCode::NOT_FOUND, "No image for this user"),
