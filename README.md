@@ -17,9 +17,11 @@ login with zauth, upload an image
 
 GET `/image/{zauth_user_id}` -> gives that user's profile image
 
-> [!NOTE]
-> by default this returns a 404 if the user does not have an image.
-> if you want a placeholder image instead, add `?placeholder=true`
+You can give additional query parameters to change what reply you receive:
+
+| query param | value  | explanation                                       |
+| ----------- | ------ | ------------------------------------------------- |
+| placeholder | `bool` | `true` if you want a placeholder instead of a 404 |
 
 # config
 
