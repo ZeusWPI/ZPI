@@ -6,15 +6,15 @@ on:
       - "v*"
 
 env:
-  REGISTRY: ghcr.io
+  REGISTRY: "ghcr.io"
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
   build-and-push-image:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
-      packages: write
+      contents: "read"
+      packages: "write"
 
     steps:
       - name: Checkout repository
