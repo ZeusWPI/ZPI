@@ -30,6 +30,8 @@ static ZAUTH_CLIENT_SECRET: LazyLock<String> =
 static IMAGE_PATH: LazyLock<String> =
     LazyLock::new(|| env::var("IMAGE_PATH").expect("IMAGE_PATH not present"));
 
+static PLACEHOLDER: &[u8] = include_bytes!("../static/placeholder.jpg");
+
 #[tokio::main]
 async fn main() {
     let _ = dotenvy::dotenv();
@@ -96,9 +98,7 @@ pub async fn get_image(
     let path = image_path(id);
     match tokio::fs::File::open(path).await {
         Err(_) => match params.placeholder {
-            Some(true) => Ok(Body::from_stream(ReaderStream::new(
-                tokio::fs::File::open("./static/placeholder.jpg").await?,
-            ))),
+            Some(true) => Ok(Body::from(PLACEHOLDER)),
             _ => Err(AppError::ImageNotFound),
         },
         Ok(file) => Ok(Body::from_stream(ReaderStream::new(file))),
