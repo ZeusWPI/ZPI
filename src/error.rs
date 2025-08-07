@@ -55,7 +55,7 @@ impl IntoResponse for AppError {
             AppError::Internal(_) => (StatusCode::INTERNAL_SERVER_ERROR, "Internal error"),
             AppError::Multipart(_) => (StatusCode::BAD_REQUEST, "Multipart error"),
             AppError::WrongFileType => (StatusCode::BAD_REQUEST, "Please give a jpeg or png"),
-            AppError::ImageNotFound => (StatusCode::NOT_FOUND, "No image for this use"),
+            AppError::ImageNotFound => (StatusCode::NOT_FOUND, "No image for this user"),
             AppError::NoFile => (StatusCode::BAD_REQUEST, "Please give a file"),
         };
         (code, Page::error(message)).into_response()

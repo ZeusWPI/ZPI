@@ -49,6 +49,7 @@ async fn main() {
         .route("/logout", get(logout))
         .route("/image", post(post_image))
         .route("/image/{id}", get(get_image))
+        .route("/{*wildcard}", get(|| async { Page::error("404") }))
         .layer(sess_mw)
         .layer(DefaultBodyLimit::max(10_485_760))
         .layer(TraceLayer::new_for_http());
