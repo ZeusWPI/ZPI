@@ -1,35 +1,28 @@
 use std::{env, sync::LazyLock};
 
+use auth::ZauthUser;
 use axum::{
     Router,
     body::Body,
     extract::{DefaultBodyLimit, Multipart, Path, Query},
-    response::{Html, IntoResponse, Redirect},
+    response::{Html, Redirect},
     routing::{get, post},
 };
 use error::AppError;
 use image::ZPIImage;
 use pages::Page;
-use rand::distr::{Alphanumeric, SampleString};
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use tokio_util::io::ReaderStream;
 use tower_http::trace::TraceLayer;
 use tower_sessions::{MemoryStore, Session, SessionManagerLayer, cookie::SameSite};
 
-use crate::image::image_path;
+use crate::image::jpg_image_path;
 
+mod auth;
 mod error;
 mod image;
 mod pages;
 
-static ZAUTH_URL: LazyLock<String> =
-    LazyLock::new(|| env::var("ZAUTH_URL").expect("ZAUTH_URL not present"));
-static CALLBACK_URL: LazyLock<String> =
-    LazyLock::new(|| env::var("ZAUTH_CALLBACK_PATH").expect("ZAUTH_CALLBACK_PATH not present"));
-static ZAUTH_CLIENT_ID: LazyLock<String> =
-    LazyLock::new(|| env::var("ZAUTH_CLIENT_ID").expect("ZAUTH_CLIENT_ID not present"));
-static ZAUTH_CLIENT_SECRET: LazyLock<String> =
-    LazyLock::new(|| env::var("ZAUTH_CLIENT_SECRET").expect("ZAUTH_CLIENT_SECRET not present"));
 static LOG_LEVEL: LazyLock<String> =
     LazyLock::new(|| env::var("LOG_LEVEL").expect("LOG_LEVEL not present"));
 
@@ -53,9 +46,9 @@ async fn main() {
 
     let app = Router::new()
         .route("/", get(index))
-        .route("/login", get(login))
-        .route("/oauth/callback", get(callback))
-        .route("/logout", get(logout))
+        .route("/login", get(auth::login))
+        .route("/oauth/callback", get(auth::callback))
+        .route("/logout", get(auth::logout))
         .route("/image", post(post_image))
         .route("/image/{id}", get(get_image))
         .route("/{*wildcard}", get(|| async { Page::error("404") }))
@@ -81,17 +74,11 @@ pub async fn post_image(session: Session, mut multipart: Multipart) -> Result<Re
             while let Some(field) = multipart.next_field().await? {
                 if let Some("image_file") = field.name() {
                     let data = field.bytes().await?;
-                    match infer::get(&data)
-                        .ok_or(AppError::WrongFileType)?
-                        .mime_type()
-                    {
-                        "image/jpeg" => {}
-                        _ => return Err(AppError::WrongFileType),
-                    }
 
-                    let image = ZPIImage::from_data(&data, user.id);
+                    let image = ZPIImage::from_data(&data, user.id)?;
                     image.save_multiple_resized(&[64, 128, 256, 512]).await?;
                     image.save_original().await?;
+
                     return Ok(Redirect::to("/"));
                 }
             }
@@ -110,7 +97,7 @@ pub async fn get_image(
     Query(params): Query<PlaceholderQuery>,
     Path(id): Path<u32>,
 ) -> Result<Body, AppError> {
-    let path = image_path(id, params.size);
+    let path = jpg_image_path(id, params.size);
     let file = tokio::fs::File::open(path).await;
     match file {
         Err(_) => match params.placeholder {
