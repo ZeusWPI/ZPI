@@ -32,7 +32,7 @@ impl<'a> ZPIImage<'a> {
     }
 
     pub async fn save_original(&self) -> Result<(), AppError> {
-        fs::write(self.path(None, SupportedFormat::Jpeg), self.data).await?;
+        fs::write(self.path(None, self.format), self.data).await?;
         Ok(())
     }
 
@@ -106,24 +106,26 @@ impl SupportedFormat {
         }
     }
 
-    fn format_info_map(format: SupportedFormat) -> (&'static str, &'static str, ImageFormat) {
-        match format {
-            SupportedFormat::Jpeg => ("jpg", "image/jpeg", ImageFormat::Jpeg),
-            Self::Png => ("png", "image/png", ImageFormat::Png),
+    pub fn extension(self) -> &'static str {
+        match self {
+            SupportedFormat::Jpeg => "jpg",
+            SupportedFormat::Png => "png",
         }
     }
 
-    pub fn extension(self) -> &'static str {
-        Self::format_info_map(self).0
-    }
-
     pub fn mime_type(self) -> &'static str {
-        Self::format_info_map(self).1
+        match self {
+            SupportedFormat::Jpeg => "image/jpeg",
+            SupportedFormat::Png => "image/png",
+        }
     }
 }
 
 impl From<SupportedFormat> for ImageFormat {
     fn from(val: SupportedFormat) -> Self {
-        SupportedFormat::format_info_map(val).2
+        match val {
+            SupportedFormat::Jpeg => ImageFormat::Jpeg,
+            SupportedFormat::Png => ImageFormat::Png,
+        }
     }
 }
