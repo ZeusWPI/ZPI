@@ -19,7 +19,10 @@ use error::AppError;
 use headers::ETag;
 use image::ZPIImage;
 use pages::Page;
-use reqwest::{StatusCode, header::ETAG};
+use reqwest::{
+    StatusCode,
+    header::{CONTENT_TYPE, ETAG},
+};
 use serde::Deserialize;
 use tokio::io::{self, ErrorKind::NotFound};
 use tokio_util::io::ReaderStream;
@@ -114,12 +117,12 @@ pub async fn get_image(
     if_none_match: Option<TypedHeader<IfNoneMatch>>,
 ) -> Result<Response, AppError> {
     let path = jpg_image_path(id, params.size);
-    let file_mod_hash = file_modified_hash(&path).await?;
+    let etag_opt = file_modified_etag(&path).await?;
 
     // return early if etag matches
     if let Some(if_none_match) = &if_none_match
-        && let Some(hash) = &file_mod_hash
-        && let Ok(etag) = format!("\"{hash}\"").parse::<ETag>()
+        && let Some(etag_string) = &etag_opt
+        && let Ok(etag) = etag_string.parse::<ETag>()
         && !if_none_match.precondition_passes(&etag)
     {
         return Ok(StatusCode::NOT_MODIFIED.into_response());
@@ -128,25 +131,29 @@ pub async fn get_image(
     // get image (or placeholder, if requested) from disk
     let file = tokio::fs::File::open(&path).await;
     let mut resp = match file {
-        Err(_) => match params.placeholder {
+        Ok(file) => Body::from_stream(ReaderStream::new(file)),
+        Err(e) if e.kind() == NotFound => match params.placeholder {
             Some(true) => Body::from(PLACEHOLDER),
             _ => return Err(AppError::ImageNotFound),
         },
-        Ok(file) => Body::from_stream(ReaderStream::new(file)),
+        Err(e) => return Err(e.into()),
     }
     .into_response();
 
     // set etag header if possible
-    if let Some(hash) = file_mod_hash
-        && let Ok(etag_hval) = format!("\"{hash}\"").parse()
+    if let Some(etag_string) = etag_opt
+        && let Ok(etag_hval) = etag_string.parse()
     {
         resp.headers_mut().insert(ETAG, etag_hval);
     }
 
+    resp.headers_mut()
+        .insert(CONTENT_TYPE, HeaderValue::from_static("image/jpeg"));
+
     Ok(resp)
 }
 
-async fn file_modified_hash(path: &path::Path) -> Result<Option<String>, AppError> {
+async fn file_modified_etag(path: &path::Path) -> Result<Option<String>, AppError> {
     let metadata = match tokio::fs::metadata(&path).await {
         Ok(metadata) => metadata,
         Err(err) if err.kind() == NotFound => return Ok(None),
@@ -157,5 +164,7 @@ async fn file_modified_hash(path: &path::Path) -> Result<Option<String>, AppErro
 
     let mut hasher = DefaultHasher::new();
     modified.hash(&mut hasher);
-    Ok(Some(hasher.finish().to_string()))
+    let hash = hasher.finish().to_string();
+
+    Ok(Some(format!("\"{hash}\"")))
 }
