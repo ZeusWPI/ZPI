@@ -24,12 +24,12 @@ mod image;
 mod pages;
 
 static LOG_LEVEL: LazyLock<String> =
-    LazyLock::new(|| env::var("LOG_LEVEL").expect("LOG_LEVEL not present"));
+    LazyLock::new(|| env::var("LOG_LEVEL").unwrap_or("INFO".into()));
 
 static PLACEHOLDER: &[u8] = include_bytes!("../static/placeholder.jpg");
 
 #[tokio::main]
-async fn main() {
+async fn main() -> Result<(), io::Error> {
     let _ = dotenvy::dotenv();
 
     let log_level = match LOG_LEVEL.as_str() {
@@ -56,8 +56,10 @@ async fn main() {
         .layer(DefaultBodyLimit::max(10_485_760))
         .layer(TraceLayer::new_for_http());
 
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
-    axum::serve(listener, app).await.unwrap();
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await?;
+    axum::serve(listener, app).await?;
+
+    Ok(())
 }
 
 pub async fn index(session: Session) -> Result<Html<String>, AppError> {
