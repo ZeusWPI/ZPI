@@ -113,7 +113,10 @@ pub async fn get_image(
     Path(id): Path<u32>,
     if_none_match: Option<TypedHeader<IfNoneMatch>>,
 ) -> Result<Response, AppError> {
-    let path = jpg_image_path(id, params.size);
+    // default size
+    let size = params.size.unwrap_or(256);
+    let path = jpg_image_path(id, Some(size));
+
     let etag_opt = file_modified_etag(&path).await?;
 
     // return early if etag matches
