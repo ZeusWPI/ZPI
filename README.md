@@ -19,9 +19,10 @@ GET `/image/{zauth_user_id}` -> gives that user's profile image
 
 You can give additional query parameters to change what reply you receive:
 
-| query param | value  | explanation                                       |
-| ----------- | ------ | ------------------------------------------------- |
-| placeholder | `bool` | `true` if you want a placeholder instead of a 404 |
+| query param | value                        | explanation                                       |
+| ----------- | ---------------------------- | ------------------------------------------------- |
+| placeholder | `bool`                       | `true` if you want a placeholder instead of a 404 |
+| size        | `64` / `128` / `256` / `512` | square resolution of the image                    |
 
 # config
 

@@ -90,7 +90,7 @@ pub async fn post_image(session: Session, mut multipart: Multipart) -> Result<Re
                     }
 
                     let image = ZPIImage::from_data(&data, user.id);
-                    image.save_multiple_resized(&[64, 128, 256]).await?;
+                    image.save_multiple_resized(&[64, 128, 256, 512]).await?;
                     image.save_original().await?;
                     return Ok(Redirect::to("/"));
                 }
