@@ -38,7 +38,7 @@ impl<'a> ZPIImage<'a> {
 
     pub async fn save_multiple_resized(&self, sizes: &[u32]) -> Result<(), AppError> {
         for size in sizes {
-            self.save_resized(*size as u32).await?;
+            self.save_resized(*size).await?;
         }
 
         Ok(())
@@ -65,7 +65,7 @@ impl<'a> ZPIImage<'a> {
         // save to file
         let mut buffer: Vec<u8> = Vec::new();
         let mut encoder = JpegEncoder::new(&mut buffer);
-        encoder.encode(&dst_image.buffer(), size, size, src_image.color().into())?;
+        encoder.encode(dst_image.buffer(), size, size, src_image.color().into())?;
         let mut file = File::create(self.path(Some(size))).await?;
         file.write_all(&buffer).await?;
 
@@ -83,8 +83,8 @@ impl<'a> ZPIImage<'a> {
 
 pub fn jpg_image_path(user_id: u32, size_opt: Option<u32>) -> PathBuf {
     let filename = match size_opt {
-        Some(size) => format!("{}.{}.jpg", user_id, size),
-        None => format!("{}.jpg", user_id),
+        Some(size) => format!("{user_id}.{size}.jpg"),
+        None => format!("{user_id}.jpg"),
     };
     PathBuf::from(IMAGE_PATH.to_string()).join(filename)
 }
@@ -96,7 +96,7 @@ pub enum SupportedFormat {
 
 impl SupportedFormat {
     pub fn guess(data: &[u8]) -> Result<SupportedFormat, AppError> {
-        match image::guess_format(data).map_err(|err| AppError::Image(err))? {
+        match image::guess_format(data).map_err(AppError::Image)? {
             ImageFormat::Jpeg => Ok(SupportedFormat::Jpeg),
             _ => Err(AppError::WrongFileType),
         }
@@ -113,8 +113,8 @@ impl SupportedFormat {
     }
 }
 
-impl Into<ImageFormat> for SupportedFormat {
-    fn into(self) -> ImageFormat {
-        Self::format_info_map(self).1
+impl From<SupportedFormat> for ImageFormat {
+    fn from(val: SupportedFormat) -> Self {
+        SupportedFormat::format_info_map(val).1
     }
 }

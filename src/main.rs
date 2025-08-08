@@ -10,7 +10,7 @@ use axum::{
     Router,
     body::Body,
     extract::{DefaultBodyLimit, Multipart, Path, Query},
-    http::{HeaderMap, HeaderValue},
+    http::HeaderValue,
     response::{Html, IntoResponse, Redirect, Response},
     routing::{get, post},
 };
@@ -27,10 +27,7 @@ use serde::Deserialize;
 use tokio::io::{self, ErrorKind::NotFound};
 use tokio_util::io::ReaderStream;
 use tower_http::trace::TraceLayer;
-use tower_sessions::{
-    MemoryStore, Session, SessionManagerLayer,
-    cookie::{SameSite, time::format_description::parse},
-};
+use tower_sessions::{MemoryStore, Session, SessionManagerLayer, cookie::SameSite};
 
 use crate::image::jpg_image_path;
 
