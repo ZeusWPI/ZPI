@@ -9,7 +9,12 @@
                 </div>
                 <form class="card" action="/image" method="post" enctype="multipart/form-data">
                     <label for="upload">New profile image</label>
-                    <input type="file" id="upload" name="image_file" accept="image/jpeg" />
+                    <input
+                        type="file"
+                        id="upload"
+                        name="image_file"
+                        accept="image/jpeg,image/png"
+                    />
                     <input type="submit" value="Upload" />
                 </form>
             </div>
