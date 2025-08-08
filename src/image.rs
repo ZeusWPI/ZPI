@@ -104,7 +104,7 @@ impl SupportedFormat {
 
     fn format_info_map(format: SupportedFormat) -> (&'static str, ImageFormat) {
         match format {
-            SupportedFormat::Jpeg => (".jpg", ImageFormat::Jpeg),
+            SupportedFormat::Jpeg => ("jpg", ImageFormat::Jpeg),
         }
     }
 
