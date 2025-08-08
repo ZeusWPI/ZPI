@@ -1,20 +1,33 @@
-use std::{env, sync::LazyLock};
+use std::{
+    env,
+    hash::{DefaultHasher, Hash, Hasher},
+    path,
+    sync::LazyLock,
+};
 
 use auth::ZauthUser;
 use axum::{
     Router,
     body::Body,
     extract::{DefaultBodyLimit, Multipart, Path, Query},
-    response::{Html, Redirect},
+    http::{HeaderMap, HeaderValue},
+    response::{Html, IntoResponse, Redirect, Response},
     routing::{get, post},
 };
+use axum_extra::{TypedHeader, headers::IfNoneMatch};
 use error::AppError;
+use headers::ETag;
 use image::ZPIImage;
 use pages::Page;
+use reqwest::{StatusCode, header::ETAG};
 use serde::Deserialize;
+use tokio::io::{self, ErrorKind::NotFound};
 use tokio_util::io::ReaderStream;
 use tower_http::trace::TraceLayer;
-use tower_sessions::{MemoryStore, Session, SessionManagerLayer, cookie::SameSite};
+use tower_sessions::{
+    MemoryStore, Session, SessionManagerLayer,
+    cookie::{SameSite, time::format_description::parse},
+};
 
 use crate::image::jpg_image_path;
 
@@ -98,14 +111,51 @@ pub struct PlaceholderQuery {
 pub async fn get_image(
     Query(params): Query<PlaceholderQuery>,
     Path(id): Path<u32>,
-) -> Result<Body, AppError> {
+    if_none_match: Option<TypedHeader<IfNoneMatch>>,
+) -> Result<Response, AppError> {
     let path = jpg_image_path(id, params.size);
-    let file = tokio::fs::File::open(path).await;
-    match file {
-        Err(_) => match params.placeholder {
-            Some(true) => Ok(Body::from(PLACEHOLDER)),
-            _ => Err(AppError::ImageNotFound),
-        },
-        Ok(file) => Ok(Body::from_stream(ReaderStream::new(file))),
+    let file_mod_hash = file_modified_hash(&path).await?;
+
+    // return early if etag matches
+    if let Some(if_none_match) = &if_none_match
+        && let Some(hash) = &file_mod_hash
+        && let Ok(etag) = format!("\"{hash}\"").parse::<ETag>()
+        && !if_none_match.precondition_passes(&etag)
+    {
+        return Ok(StatusCode::NOT_MODIFIED.into_response());
     }
+
+    // get image (or placeholder, if requested) from disk
+    let file = tokio::fs::File::open(&path).await;
+    let mut resp = match file {
+        Err(_) => match params.placeholder {
+            Some(true) => Body::from(PLACEHOLDER),
+            _ => return Err(AppError::ImageNotFound),
+        },
+        Ok(file) => Body::from_stream(ReaderStream::new(file)),
+    }
+    .into_response();
+
+    // set etag header if possible
+    if let Some(hash) = file_mod_hash
+        && let Ok(etag_hval) = format!("\"{hash}\"").parse()
+    {
+        resp.headers_mut().insert(ETAG, etag_hval);
+    }
+
+    Ok(resp)
+}
+
+async fn file_modified_hash(path: &path::Path) -> Result<Option<String>, AppError> {
+    let metadata = match tokio::fs::metadata(&path).await {
+        Ok(metadata) => metadata,
+        Err(err) if err.kind() == NotFound => return Ok(None),
+        err => err?,
+    };
+
+    let modified = metadata.modified()?;
+
+    let mut hasher = DefaultHasher::new();
+    modified.hash(&mut hasher);
+    Ok(Some(hasher.finish().to_string()))
 }
