@@ -32,7 +32,7 @@ impl<'a> ZPIImage<'a> {
     }
 
     pub async fn save_original(&self) -> Result<(), AppError> {
-        fs::write(self.path(None), self.data).await?;
+        fs::write(self.path(None, SupportedFormat::Jpeg), self.data).await?;
         Ok(())
     }
 
@@ -46,7 +46,7 @@ impl<'a> ZPIImage<'a> {
 
     pub async fn save_resized(&self, size: u32) -> Result<(), AppError> {
         // load image from memory data
-        let src_image = image::load_from_memory_with_format(self.data, ImageFormat::Jpeg)?;
+        let src_image = image::load_from_memory_with_format(self.data, self.format.into())?;
 
         // create a destination image buffer
         let mut dst_image = Image::new(
@@ -62,20 +62,22 @@ impl<'a> ZPIImage<'a> {
         let mut resizer = Resizer::new();
         resizer.resize(&src_image, &mut dst_image, None)?;
 
-        // save to file
+        // write resized image to buffer
         let mut buffer: Vec<u8> = Vec::new();
         let mut encoder = JpegEncoder::new(&mut buffer);
         encoder.encode(dst_image.buffer(), size, size, src_image.color().into())?;
-        let mut file = File::create(self.path(Some(size))).await?;
+
+        // save image buffer to file
+        let mut file = File::create(self.path(Some(size), SupportedFormat::Jpeg)).await?;
         file.write_all(&buffer).await?;
 
         Ok(())
     }
 
-    pub fn path(&self, size_opt: Option<u32>) -> PathBuf {
+    pub fn path(&self, size_opt: Option<u32>, format: SupportedFormat) -> PathBuf {
         let filename = match size_opt {
-            Some(size) => format!("{}.{}.{}", self.user_id, size, self.format.extension()),
-            None => format!("{}.{}", self.user_id, self.format.extension()),
+            Some(size) => format!("{}.{}.{}", self.user_id, size, format.extension()),
+            None => format!("{}.{}", self.user_id, format.extension()),
         };
         PathBuf::from(IMAGE_PATH.to_string()).join(filename)
     }
@@ -92,29 +94,36 @@ pub fn jpg_image_path(user_id: u32, size_opt: Option<u32>) -> PathBuf {
 #[derive(Clone, Copy)]
 pub enum SupportedFormat {
     Jpeg,
+    Png,
 }
 
 impl SupportedFormat {
     pub fn guess(data: &[u8]) -> Result<SupportedFormat, AppError> {
         match image::guess_format(data).map_err(AppError::Image)? {
             ImageFormat::Jpeg => Ok(SupportedFormat::Jpeg),
+            ImageFormat::Png => Ok(SupportedFormat::Png),
             _ => Err(AppError::WrongFileType),
         }
     }
 
-    fn format_info_map(format: SupportedFormat) -> (&'static str, ImageFormat) {
+    fn format_info_map(format: SupportedFormat) -> (&'static str, &'static str, ImageFormat) {
         match format {
-            SupportedFormat::Jpeg => ("jpg", ImageFormat::Jpeg),
+            SupportedFormat::Jpeg => ("jpg", "image/jpeg", ImageFormat::Jpeg),
+            Self::Png => ("png", "image/png", ImageFormat::Png),
         }
     }
 
     pub fn extension(self) -> &'static str {
         Self::format_info_map(self).0
     }
+
+    pub fn mime_type(self) -> &'static str {
+        Self::format_info_map(self).1
+    }
 }
 
 impl From<SupportedFormat> for ImageFormat {
     fn from(val: SupportedFormat) -> Self {
-        SupportedFormat::format_info_map(val).1
+        SupportedFormat::format_info_map(val).2
     }
 }
