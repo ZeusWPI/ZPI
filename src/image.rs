@@ -3,7 +3,7 @@ use std::{env, path::PathBuf, sync::LazyLock};
 pub use image::ImageFormat;
 
 use fast_image_resize::{IntoImageView, Resizer, images::Image};
-use image::codecs::jpeg::JpegEncoder;
+use image::{GenericImageView, codecs::jpeg::JpegEncoder};
 use tokio::{
     fs::{self, File},
     io::AsyncWriteExt,
@@ -48,6 +48,16 @@ impl<'a> ZPIImage<'a> {
         // load image from memory data
         let src_image = image::load_from_memory_with_format(self.data, self.format.into())?;
 
+        // crop
+        let (width, heigth) = src_image.dimensions();
+        let crop_dimension = width.min(heigth);
+        let cropped_img = src_image.crop_imm(
+            (width - crop_dimension) / 2,
+            (heigth - crop_dimension) / 2,
+            crop_dimension,
+            crop_dimension,
+        );
+
         // create a destination image buffer
         let mut dst_image = Image::new(
             size,
@@ -58,9 +68,8 @@ impl<'a> ZPIImage<'a> {
         );
 
         // resize image
-        // TODO cut
         let mut resizer = Resizer::new();
-        resizer.resize(&src_image, &mut dst_image, None)?;
+        resizer.resize(&cropped_img, &mut dst_image, None)?;
 
         // write resized image to buffer
         let mut buffer: Vec<u8> = Vec::new();
