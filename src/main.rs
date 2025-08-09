@@ -123,11 +123,7 @@ pub async fn get_image(
     let etag_opt = file_modified_etag(&path).await?;
 
     // return early if etag matches
-    if let Some(if_none_match) = &if_none_match
-        && let Some(etag_string) = &etag_opt
-        && let Ok(etag) = etag_string.parse::<ETag>()
-        && !if_none_match.precondition_passes(&etag)
-    {
+    if etag_matches(&if_none_match, &etag_opt) {
         return Ok(StatusCode::NOT_MODIFIED.into_response());
     }
 
@@ -145,15 +141,27 @@ pub async fn get_image(
 
     // set etag header if possible
     if let Some(etag_string) = etag_opt
-        && let Ok(etag_hval) = etag_string.parse()
+        && let Ok(etag_header_val) = etag_string.parse()
     {
-        resp.headers_mut().insert(ETAG, etag_hval);
+        resp.headers_mut().insert(ETAG, etag_header_val);
     }
 
     resp.headers_mut()
         .insert(CONTENT_TYPE, HeaderValue::from_static("image/jpeg"));
 
     Ok(resp)
+}
+
+fn etag_matches(header: &Option<TypedHeader<IfNoneMatch>>, etag_string: &Option<String>) -> bool {
+    if let Some(if_none_match) = header
+        && let Some(etag_string) = etag_string
+        && let Ok(etag) = etag_string.parse::<ETag>()
+        && !if_none_match.precondition_passes(&etag)
+    {
+        true
+    } else {
+        false
+    }
 }
 
 async fn file_modified_etag(path: &path::Path) -> Result<Option<String>, AppError> {
