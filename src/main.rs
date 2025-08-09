@@ -8,9 +8,7 @@ use std::{
 use auth::ZauthUser;
 use axum::{
     Router,
-    body::Body,
     extract::{DefaultBodyLimit, Multipart, Path, Query},
-    http::HeaderValue,
     response::{Html, IntoResponse, Redirect, Response},
     routing::{get, post},
 };
@@ -19,17 +17,11 @@ use error::AppError;
 use headers::ETag;
 use image::ProfileImage;
 use pages::Page;
-use reqwest::{
-    StatusCode,
-    header::{CONTENT_TYPE, ETAG},
-};
+use reqwest::{StatusCode, header::ETAG};
 use serde::Deserialize;
 use tokio::io::{self, ErrorKind::NotFound};
-use tokio_util::io::ReaderStream;
 use tower_http::trace::TraceLayer;
 use tower_sessions::{MemoryStore, Session, SessionManagerLayer, cookie::SameSite};
-
-use crate::image::jpg_image_path;
 
 mod auth;
 mod error;
@@ -113,14 +105,13 @@ pub struct PlaceholderQuery {
 
 pub async fn get_image(
     Query(params): Query<PlaceholderQuery>,
-    Path(id): Path<u32>,
+    Path(user_id): Path<u32>,
     if_none_match: Option<TypedHeader<IfNoneMatch>>,
 ) -> Result<Response, AppError> {
     // default size
     let size = params.size.unwrap_or(256);
-    let path = jpg_image_path(id, Some(size));
-
-    let etag_opt = file_modified_etag(&path).await?;
+    let profile = ProfileImage::new(user_id);
+    let etag_opt = file_modified_etag(&profile.path(size)).await?;
 
     // return early if etag matches
     if etag_matches(&if_none_match, &etag_opt) {
@@ -128,15 +119,10 @@ pub async fn get_image(
     }
 
     // get image (or placeholder, if requested) from disk
-    let file = tokio::fs::File::open(&path).await;
-    let mut resp = match file {
-        Ok(file) => Body::from_stream(ReaderStream::new(file)),
-        Err(e) if e.kind() == NotFound => match params.placeholder {
-            Some(true) => Body::from(PLACEHOLDER),
-            _ => return Err(AppError::ImageNotFound),
-        },
-        Err(e) => return Err(e.into()),
-    }
+    let mut resp = match params.placeholder {
+        Some(true) => profile.get_with_placeholder(size).await,
+        _ => profile.get(size).await,
+    }?
     .into_response();
 
     // set etag header if possible
@@ -145,9 +131,6 @@ pub async fn get_image(
     {
         resp.headers_mut().insert(ETAG, etag_header_val);
     }
-
-    resp.headers_mut()
-        .insert(CONTENT_TYPE, HeaderValue::from_static("image/jpeg"));
 
     Ok(resp)
 }

@@ -1,16 +1,35 @@
-use std::{env, path::PathBuf, sync::LazyLock};
+use std::{env, io::ErrorKind, path::PathBuf, sync::LazyLock};
 
+use axum::{
+    body::Body,
+    http::HeaderValue,
+    response::{IntoResponse, Response},
+};
 use fast_image_resize::{IntoImageView, Resizer, images::Image};
 use image::{DynamicImage, GenericImageView, codecs::jpeg::JpegEncoder};
+use reqwest::header::CONTENT_TYPE;
 use tokio::{fs::File, io::AsyncWriteExt};
+use tokio_util::io::ReaderStream;
 
-use crate::{error::AppError, format::SupportedFormat};
+use crate::{PLACEHOLDER, error::AppError, format::SupportedFormat};
 
 static IMAGE_PATH: LazyLock<String> =
     LazyLock::new(|| env::var("IMAGE_PATH").expect("IMAGE_PATH not present"));
 
+static IMAGE_SAVE_TYPE: SupportedFormat = SupportedFormat::Jpeg;
+
 pub struct ProfileImage {
     user_id: u32,
+}
+
+pub struct DataImage {
+    profile: ProfileImage,
+    image: DynamicImage,
+}
+
+pub enum ResponseImage {
+    File(File),
+    Placeholder,
 }
 
 impl ProfileImage {
@@ -32,18 +51,28 @@ impl ProfileImage {
         })
     }
 
-    pub fn path(&self, size_opt: Option<u32>, format: SupportedFormat) -> PathBuf {
-        let filename = match size_opt {
-            Some(size) => format!("{}.{}.{}", self.user_id, size, format.extension()),
-            None => format!("{}.{}", self.user_id, format.extension()),
-        };
+    pub async fn get(&self, size: u32) -> Result<ResponseImage, AppError> {
+        let file = tokio::fs::File::open(&self.path(size))
+            .await
+            .map_err(|err| match err.kind() {
+                ErrorKind::NotFound => AppError::ImageNotFound,
+                _ => err.into(),
+            })?;
+
+        Ok(ResponseImage::File(file))
+    }
+
+    pub async fn get_with_placeholder(&self, size: u32) -> Result<ResponseImage, AppError> {
+        match self.get(size).await {
+            Err(AppError::ImageNotFound) => Ok(ResponseImage::Placeholder),
+            other => other,
+        }
+    }
+
+    pub fn path(&self, size: u32) -> PathBuf {
+        let filename = format!("{}.{}.{}", self.user_id, size, IMAGE_SAVE_TYPE.extension());
         PathBuf::from(IMAGE_PATH.to_string()).join(filename)
     }
-}
-
-pub struct DataImage {
-    profile: ProfileImage,
-    image: DynamicImage,
 }
 
 impl DataImage {
@@ -87,24 +116,36 @@ impl DataImage {
         // resize image
         Resizer::new().resize(&self.image, &mut dst_image, None)?;
 
-        let mut buffer = Vec::new();
-        let (mut encoder, format) = (JpegEncoder::new(&mut buffer), SupportedFormat::Jpeg);
-
         // write resized image to buffer
-        encoder.encode(dst_image.buffer(), size, size, self.image.color().into())?;
+        let mut buffer = Vec::new();
+        JpegEncoder::new(&mut buffer).encode(
+            dst_image.buffer(),
+            size,
+            size,
+            self.image.color().into(),
+        )?;
 
         // save image buffer to file
-        let mut file = File::create(self.profile.path(Some(size), format)).await?;
+        let mut file = File::create(self.profile.path(size)).await?;
         file.write_all(&buffer).await?;
 
         Ok(self)
     }
 }
 
-pub fn jpg_image_path(user_id: u32, size_opt: Option<u32>) -> PathBuf {
-    let filename = match size_opt {
-        Some(size) => format!("{user_id}.{size}.jpg"),
-        None => format!("{user_id}.jpg"),
-    };
-    PathBuf::from(IMAGE_PATH.to_string()).join(filename)
+impl IntoResponse for ResponseImage {
+    fn into_response(self) -> Response {
+        let mut resp = match self {
+            Self::Placeholder => Body::from(PLACEHOLDER),
+            Self::File(file) => Body::from_stream(ReaderStream::new(file)),
+        }
+        .into_response();
+
+        resp.headers_mut().insert(
+            CONTENT_TYPE,
+            HeaderValue::from_static(IMAGE_SAVE_TYPE.mime_type()),
+        );
+
+        resp
+    }
 }
