@@ -17,12 +17,15 @@ login with zauth, upload an image
 
 GET `/image/{zauth_user_id}` -> gives that user's profile image
 
-You can give additional query parameters to change what reply you receive:
+You can give any optional query parameters to change what reply you receive:
 
-| query param | value                        | explanation                                       |
-| ----------- | ---------------------------- | ------------------------------------------------- |
-| placeholder | `bool`                       | `true` if you want a placeholder instead of a 404 |
-| size        | `64` / `128` / `256` / `512` | square resolution of the image                    |
+| query param | value                        | explanation                                 |
+| ----------- | ---------------------------- | ------------------------------------------- |
+| placeholder | `true` / `false`             | return a placeholder when user has no image |
+| size        | `64` / `128` / `256` / `512` | square resolution of the image              |
+
+> [!WARNING]
+> The placeholder will always be returned as a 500x500 sized image
 
 # config
 
