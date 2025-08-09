@@ -9,6 +9,7 @@ impl Page {
     pub fn upload(username: &str, user_id: u32) -> Html<String> {
         Html(
             UPLOAD_HTML
+                .replace("{{version}}", env!("CARGO_PKG_VERSION"))
                 .replace("{{username}}", username)
                 .replace("{{user_id}}", &user_id.to_string()),
         )
