@@ -6,6 +6,7 @@ use crate::error::AppError;
 pub enum SupportedFormat {
     Jpeg,
     Png,
+    Webp,
 }
 
 impl SupportedFormat {
@@ -13,6 +14,7 @@ impl SupportedFormat {
         match image::guess_format(data)? {
             ImageFormat::Jpeg => Ok(Self::Jpeg),
             ImageFormat::Png => Ok(Self::Png),
+            ImageFormat::WebP => Ok(Self::Webp),
             _ => Err(AppError::WrongFileType),
         }
     }
@@ -21,6 +23,7 @@ impl SupportedFormat {
         match self {
             Self::Jpeg => "jpg",
             Self::Png => "png",
+            Self::Webp => "webp",
         }
     }
 
@@ -28,6 +31,7 @@ impl SupportedFormat {
         match self {
             Self::Jpeg => "image/jpeg",
             Self::Png => "image/png",
+            Self::Webp => "image/webp",
         }
     }
 }
@@ -37,6 +41,7 @@ impl From<SupportedFormat> for ImageFormat {
         match val {
             SupportedFormat::Jpeg => ImageFormat::Jpeg,
             SupportedFormat::Png => ImageFormat::Png,
+            SupportedFormat::Webp => ImageFormat::WebP,
         }
     }
 }
