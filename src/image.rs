@@ -23,9 +23,10 @@ pub struct ProfileImage {
     user_id: u32,
 }
 
-pub struct DataImage {
+pub struct DataImage<'a> {
     profile: ProfileImage,
     image: DynamicImage,
+    original_data: &'a [u8],
 }
 
 pub enum ResponseImage {
@@ -49,6 +50,7 @@ impl ProfileImage {
         Ok(DataImage {
             profile: self,
             image,
+            original_data: data,
         })
     }
 
@@ -70,13 +72,23 @@ impl ProfileImage {
         }
     }
 
+    pub fn path_orig(&self) -> PathBuf {
+        PathBuf::from(IMAGE_PATH.to_string()).join(self.user_id.to_string())
+    }
+
     pub fn path(&self, size: u32) -> PathBuf {
         let filename = format!("{}.{}.{}", self.user_id, size, IMAGE_SAVE_TYPE.extension());
         PathBuf::from(IMAGE_PATH.to_string()).join(filename)
     }
 }
 
-impl DataImage {
+impl<'a> DataImage<'a> {
+    pub async fn save_original(&self) -> Result<&Self, AppError> {
+        let path = self.profile.path_orig();
+        tokio::fs::write(path, self.original_data).await?;
+        Ok(self)
+    }
+
     /// crop the image to a square
     pub fn cropped(self) -> Self {
         let (width, heigth) = self.image.dimensions();
