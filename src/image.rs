@@ -6,17 +6,18 @@ use axum::{
     response::{IntoResponse, Response},
 };
 use fast_image_resize::{IntoImageView, Resizer, images::Image};
-use image::{DynamicImage, GenericImageView, codecs::jpeg::JpegEncoder};
+use image::{DynamicImage, GenericImageView};
 use reqwest::header::CONTENT_TYPE;
 use tokio::{fs::File, io::AsyncWriteExt};
 use tokio_util::io::ReaderStream;
+use webp::Encoder;
 
 use crate::{PLACEHOLDER, error::AppError, format::SupportedFormat};
 
 static IMAGE_PATH: LazyLock<String> =
     LazyLock::new(|| env::var("IMAGE_PATH").expect("IMAGE_PATH not present"));
 
-static IMAGE_SAVE_TYPE: SupportedFormat = SupportedFormat::Jpeg;
+static IMAGE_SAVE_TYPE: SupportedFormat = SupportedFormat::Webp;
 
 pub struct ProfileImage {
     user_id: u32,
@@ -105,7 +106,7 @@ impl DataImage {
     /// resize the image and save
     pub async fn save_size(&self, size: u32) -> Result<&Self, AppError> {
         // create a destination image buffer
-        let mut dst_image = Image::new(
+        let mut resized_image = Image::new(
             size,
             size,
             self.image
@@ -114,20 +115,14 @@ impl DataImage {
         );
 
         // resize image
-        Resizer::new().resize(&self.image, &mut dst_image, None)?;
+        Resizer::new().resize(&self.image, &mut resized_image, None)?;
 
-        // write resized image to buffer
-        let mut buffer = Vec::new();
-        JpegEncoder::new(&mut buffer).encode(
-            dst_image.buffer(),
-            size,
-            size,
-            self.image.color().into(),
-        )?;
+        let encoder = Encoder::from_rgb(resized_image.buffer(), size, size);
+        let webp = encoder.encode(85.).to_vec();
 
         // save image buffer to file
         let mut file = File::create(self.profile.path(size)).await?;
-        file.write_all(&buffer).await?;
+        file.write_all(&webp).await?;
 
         Ok(self)
     }
