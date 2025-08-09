@@ -1,4 +1,9 @@
-use std::{env, io::ErrorKind, path::PathBuf, sync::LazyLock};
+use std::{
+    env,
+    io::ErrorKind,
+    path::PathBuf,
+    sync::{Arc, LazyLock},
+};
 
 use axum::{
     body::Body,
@@ -8,7 +13,7 @@ use axum::{
 use fast_image_resize::{IntoImageView, Resizer, images::Image};
 use image::{DynamicImage, GenericImageView};
 use reqwest::header::CONTENT_TYPE;
-use tokio::{fs::File, io::AsyncWriteExt};
+use tokio::{fs::File, io::AsyncWriteExt, task::JoinSet};
 use tokio_util::io::ReaderStream;
 use webp::Encoder;
 
@@ -23,10 +28,9 @@ pub struct ProfileImage {
     user_id: u32,
 }
 
-pub struct DataImage<'a> {
+pub struct DataImage {
     profile: ProfileImage,
     image: DynamicImage,
-    original_data: &'a [u8],
 }
 
 pub enum ResponseImage {
@@ -39,7 +43,11 @@ impl ProfileImage {
         Self { user_id }
     }
 
-    pub fn with_data(self, data: &[u8]) -> Result<DataImage, AppError> {
+    pub async fn with_data(self, data: &[u8]) -> Result<DataImage, AppError> {
+        // save original
+        let path = self.path_orig();
+        tokio::fs::write(path, data).await?;
+
         let format = SupportedFormat::guess(data)?;
         let image = image::load_from_memory_with_format(data, format.into())?;
 
@@ -50,7 +58,6 @@ impl ProfileImage {
         Ok(DataImage {
             profile: self,
             image,
-            original_data: data,
         })
     }
 
@@ -82,13 +89,7 @@ impl ProfileImage {
     }
 }
 
-impl<'a> DataImage<'a> {
-    pub async fn save_original(&self) -> Result<&Self, AppError> {
-        let path = self.profile.path_orig();
-        tokio::fs::write(path, self.original_data).await?;
-        Ok(self)
-    }
-
+impl DataImage {
     /// crop the image to a square
     pub fn cropped(self) -> Self {
         let (width, heigth) = self.image.dimensions();
@@ -107,16 +108,24 @@ impl<'a> DataImage<'a> {
     }
 
     /// save as multiple sizes
-    pub async fn save_sizes(&self, sizes: &[u32]) -> Result<&Self, AppError> {
-        for size in sizes {
-            self.save_size(*size).await?;
+    pub async fn save_sizes(self, sizes: &[u32]) -> Result<(), AppError> {
+        let mut set = JoinSet::new();
+        let image = Arc::new(self);
+
+        for &size in sizes {
+            let image_arc = image.clone();
+            set.spawn(async move { image_arc.save_size(size).await });
         }
 
-        Ok(self)
+        while let Some(res) = set.join_next().await {
+            res.unwrap()?;
+        }
+
+        Ok(())
     }
 
     /// resize the image and save
-    pub async fn save_size(&self, size: u32) -> Result<&Self, AppError> {
+    pub async fn save_size(&self, size: u32) -> Result<(), AppError> {
         // create a destination image buffer
         let mut resized_image = Image::new(
             size,
@@ -136,7 +145,7 @@ impl<'a> DataImage<'a> {
         let mut file = File::create(self.profile.path(size)).await?;
         file.write_all(&webp).await?;
 
-        Ok(self)
+        Ok(())
     }
 }
 

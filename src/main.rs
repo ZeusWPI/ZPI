@@ -84,10 +84,9 @@ pub async fn post_image(session: Session, mut multipart: Multipart) -> Result<Re
                     let data = field.bytes().await?;
 
                     ProfileImage::new(user.id)
-                        .with_data(&data)?
-                        .cropped()
-                        .save_original()
+                        .with_data(&data)
                         .await?
+                        .cropped()
                         .save_sizes(&[64, 128, 256, 512])
                         .await?;
 
