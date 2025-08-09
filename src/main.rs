@@ -17,7 +17,7 @@ use axum::{
 use axum_extra::{TypedHeader, headers::IfNoneMatch};
 use error::AppError;
 use headers::ETag;
-use image::ZPIImage;
+use image::ProfileImage;
 use pages::Page;
 use reqwest::{
     StatusCode,
@@ -33,6 +33,7 @@ use crate::image::jpg_image_path;
 
 mod auth;
 mod error;
+mod format;
 mod image;
 mod pages;
 
@@ -90,9 +91,11 @@ pub async fn post_image(session: Session, mut multipart: Multipart) -> Result<Re
                 if let Some("image_file") = field.name() {
                     let data = field.bytes().await?;
 
-                    let image = ZPIImage::from_data(&data, user.id)?;
-                    image.save_multiple_resized(&[64, 128, 256, 512]).await?;
-                    image.save_original().await?;
+                    ProfileImage::new(user.id)
+                        .with_data(&data)?
+                        .cropped()
+                        .save_sizes(&[64, 128, 256, 512])
+                        .await?;
 
                     return Ok(Redirect::to("/"));
                 }

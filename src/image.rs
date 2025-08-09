@@ -1,86 +1,35 @@
 use std::{env, path::PathBuf, sync::LazyLock};
 
-pub use image::ImageFormat;
-
 use fast_image_resize::{IntoImageView, Resizer, images::Image};
-use image::{GenericImageView, codecs::jpeg::JpegEncoder};
-use tokio::{
-    fs::{self, File},
-    io::AsyncWriteExt,
-};
+use image::{DynamicImage, GenericImageView, codecs::jpeg::JpegEncoder};
+use tokio::{fs::File, io::AsyncWriteExt};
 
-use crate::error::AppError;
+use crate::{error::AppError, format::SupportedFormat};
 
 static IMAGE_PATH: LazyLock<String> =
     LazyLock::new(|| env::var("IMAGE_PATH").expect("IMAGE_PATH not present"));
 
-pub struct ZPIImage<'a> {
-    data: &'a [u8],
+pub struct ProfileImage {
     user_id: u32,
-    format: SupportedFormat,
 }
 
-impl<'a> ZPIImage<'a> {
-    /// Creates a ZPIImage from data. Checks if it is a supported format.
-    pub fn from_data(data: &'a [u8], user_id: u32) -> Result<Self, AppError> {
+impl ProfileImage {
+    pub fn new(user_id: u32) -> Self {
+        Self { user_id }
+    }
+
+    pub fn with_data(self, data: &[u8]) -> Result<DataImage, AppError> {
         let format = SupportedFormat::guess(data)?;
-        Ok(ZPIImage {
-            data,
-            user_id,
-            format,
-        })
-    }
+        let image = image::load_from_memory_with_format(data, format.into())?;
 
-    pub async fn save_original(&self) -> Result<(), AppError> {
-        fs::write(self.path(None, self.format), self.data).await?;
-        Ok(())
-    }
-
-    pub async fn save_multiple_resized(&self, sizes: &[u32]) -> Result<(), AppError> {
-        for size in sizes {
-            self.save_resized(*size).await?;
+        if image.dimensions() > (10_000, 10_000) {
+            return Err(AppError::ImageResTooLarge);
         }
 
-        Ok(())
-    }
-
-    pub async fn save_resized(&self, size: u32) -> Result<(), AppError> {
-        // load image from memory data
-        let src_image = image::load_from_memory_with_format(self.data, self.format.into())?;
-
-        // crop
-        let (width, heigth) = src_image.dimensions();
-        let crop_dimension = width.min(heigth);
-        let cropped_img = src_image.crop_imm(
-            (width - crop_dimension) / 2,
-            (heigth - crop_dimension) / 2,
-            crop_dimension,
-            crop_dimension,
-        );
-
-        // create a destination image buffer
-        let mut dst_image = Image::new(
-            size,
-            size,
-            src_image
-                .pixel_type()
-                .ok_or(AppError::Internal("image pixel type errr".into()))?,
-        );
-
-        // resize image
-        let mut resizer = Resizer::new();
-        resizer.resize(&cropped_img, &mut dst_image, None)?;
-
-        // write resized image to buffer
-        let mut buffer: Vec<u8> = Vec::new();
-        let mut encoder = JpegEncoder::new(&mut buffer);
-        encoder.encode(dst_image.buffer(), size, size, src_image.color().into())?;
-
-        // save image buffer to file
-        let mut file = File::create(self.path(Some(size), SupportedFormat::Jpeg)).await?;
-        file.write_all(&buffer).await?;
-
-        Ok(())
+        Ok(DataImage {
+            profile: self,
+            image,
+        })
     }
 
     pub fn path(&self, size_opt: Option<u32>, format: SupportedFormat) -> PathBuf {
@@ -92,49 +41,70 @@ impl<'a> ZPIImage<'a> {
     }
 }
 
+pub struct DataImage {
+    profile: ProfileImage,
+    image: DynamicImage,
+}
+
+impl DataImage {
+    /// crop the image to a square
+    pub fn cropped(self) -> Self {
+        let (width, heigth) = self.image.dimensions();
+        let crop_dimension = width.min(heigth);
+        let cropped_img = self.image.crop_imm(
+            (width - crop_dimension) / 2,
+            (heigth - crop_dimension) / 2,
+            crop_dimension,
+            crop_dimension,
+        );
+
+        Self {
+            image: cropped_img,
+            ..self
+        }
+    }
+
+    /// save as multiple sizes
+    pub async fn save_sizes(&self, sizes: &[u32]) -> Result<&Self, AppError> {
+        for size in sizes {
+            self.save_size(*size).await?;
+        }
+
+        Ok(self)
+    }
+
+    /// resize the image and save
+    pub async fn save_size(&self, size: u32) -> Result<&Self, AppError> {
+        // create a destination image buffer
+        let mut dst_image = Image::new(
+            size,
+            size,
+            self.image
+                .pixel_type()
+                .ok_or(AppError::Internal("image pixel type err".into()))?,
+        );
+
+        // resize image
+        Resizer::new().resize(&self.image, &mut dst_image, None)?;
+
+        let mut buffer = Vec::new();
+        let (mut encoder, format) = (JpegEncoder::new(&mut buffer), SupportedFormat::Jpeg);
+
+        // write resized image to buffer
+        encoder.encode(dst_image.buffer(), size, size, self.image.color().into())?;
+
+        // save image buffer to file
+        let mut file = File::create(self.profile.path(Some(size), format)).await?;
+        file.write_all(&buffer).await?;
+
+        Ok(self)
+    }
+}
+
 pub fn jpg_image_path(user_id: u32, size_opt: Option<u32>) -> PathBuf {
     let filename = match size_opt {
         Some(size) => format!("{user_id}.{size}.jpg"),
         None => format!("{user_id}.jpg"),
     };
     PathBuf::from(IMAGE_PATH.to_string()).join(filename)
-}
-
-#[derive(Clone, Copy)]
-pub enum SupportedFormat {
-    Jpeg,
-    Png,
-}
-
-impl SupportedFormat {
-    pub fn guess(data: &[u8]) -> Result<SupportedFormat, AppError> {
-        match image::guess_format(data).map_err(AppError::Image)? {
-            ImageFormat::Jpeg => Ok(SupportedFormat::Jpeg),
-            ImageFormat::Png => Ok(SupportedFormat::Png),
-            _ => Err(AppError::WrongFileType),
-        }
-    }
-
-    pub fn extension(self) -> &'static str {
-        match self {
-            SupportedFormat::Jpeg => "jpg",
-            SupportedFormat::Png => "png",
-        }
-    }
-
-    pub fn mime_type(self) -> &'static str {
-        match self {
-            SupportedFormat::Jpeg => "image/jpeg",
-            SupportedFormat::Png => "image/png",
-        }
-    }
-}
-
-impl From<SupportedFormat> for ImageFormat {
-    fn from(val: SupportedFormat) -> Self {
-        match val {
-            SupportedFormat::Jpeg => ImageFormat::Jpeg,
-            SupportedFormat::Png => ImageFormat::Png,
-        }
-    }
 }
