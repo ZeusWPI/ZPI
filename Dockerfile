@@ -25,6 +25,4 @@ RUN apk add --no-cache openssl
 
 COPY --from=builder /usr/src/zpi/target/release/zpi /usr/local/bin/
 
-COPY ./static /static
-
 CMD ["/usr/local/bin/zpi"]

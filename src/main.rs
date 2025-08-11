@@ -1,96 +1,99 @@
-use std::{env, path::PathBuf, sync::LazyLock};
+use std::{
+    env,
+    hash::{DefaultHasher, Hash, Hasher},
+    path,
+    sync::LazyLock,
+};
 
+use auth::ZauthUser;
 use axum::{
     Router,
-    body::Body,
     extract::{DefaultBodyLimit, Multipart, Path, Query},
-    response::{Html, IntoResponse, Redirect},
-    routing::get,
+    response::{Html, IntoResponse, Redirect, Response},
+    routing::{get, post},
 };
-use rand::distr::{Alphanumeric, SampleString};
-use serde::{Deserialize, Serialize};
-use tokio::fs;
-use tokio_util::io::ReaderStream;
+use axum_extra::{TypedHeader, headers::IfNoneMatch};
+use error::AppError;
+use headers::ETag;
+use image::ProfileImage;
+use pages::Page;
+use reqwest::{StatusCode, header::ETAG};
+use serde::Deserialize;
+use tokio::io::{self, ErrorKind::NotFound};
 use tower_http::trace::TraceLayer;
 use tower_sessions::{MemoryStore, Session, SessionManagerLayer, cookie::SameSite};
 
-static ZAUTH_URL: LazyLock<String> =
-    LazyLock::new(|| env::var("ZAUTH_URL").expect("ZAUTH_URL not present"));
-static CALLBACK_URL: LazyLock<String> =
-    LazyLock::new(|| env::var("ZAUTH_CALLBACK_PATH").expect("ZAUTH_CALLBACK_PATH not present"));
-static ZAUTH_CLIENT_ID: LazyLock<String> =
-    LazyLock::new(|| env::var("ZAUTH_CLIENT_ID").expect("ZAUTH_CLIENT_ID not present"));
-static ZAUTH_CLIENT_SECRET: LazyLock<String> =
-    LazyLock::new(|| env::var("ZAUTH_CLIENT_SECRET").expect("ZAUTH_CLIENT_SECRET not present"));
-static IMAGE_PATH: LazyLock<String> =
-    LazyLock::new(|| env::var("IMAGE_PATH").expect("IMAGE_PATH not present"));
+mod auth;
+mod error;
+mod format;
+mod image;
+mod pages;
 
-static LOGIN_HTML: &str = include_str!("../static/login.html");
-static UPLOAD_HTML: &str = include_str!("../static/upload.html");
+static LOG_LEVEL: LazyLock<String> =
+    LazyLock::new(|| env::var("LOG_LEVEL").unwrap_or("INFO".into()));
+
+static PLACEHOLDER: &[u8] = include_bytes!("../static/placeholder.jpg");
 
 #[tokio::main]
-async fn main() {
+async fn main() -> Result<(), io::Error> {
     let _ = dotenvy::dotenv();
-    tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::DEBUG)
-        .init();
+
+    let log_level = match LOG_LEVEL.as_str() {
+        "DEBUG" => tracing::Level::DEBUG,
+        "INFO" => tracing::Level::INFO,
+        "WARN" => tracing::Level::WARN,
+        _ => tracing::Level::INFO,
+    };
+
+    tracing_subscriber::fmt().with_max_level(log_level).init();
 
     let sess_store = MemoryStore::default();
     let sess_mw = SessionManagerLayer::new(sess_store).with_same_site(SameSite::Lax);
 
     let app = Router::new()
         .route("/", get(index))
-        .route("/login", get(login))
-        .route("/oauth/callback", get(callback))
-        .route("/logout", get(logout))
-        .route("/image", get(image_index).post(post_image))
+        .route("/login", get(auth::login))
+        .route("/oauth/callback", get(auth::callback))
+        .route("/logout", get(auth::logout))
+        .route("/image", post(post_image))
         .route("/image/{id}", get(get_image))
+        .route("/{*wildcard}", get(|| async { Page::error("404") }))
         .layer(sess_mw)
         .layer(DefaultBodyLimit::max(10_485_760))
         .layer(TraceLayer::new_for_http());
 
-    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await.unwrap();
-    axum::serve(listener, app).await.unwrap();
+    let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await?;
+    axum::serve(listener, app).await?;
+
+    Ok(())
 }
 
-pub async fn index(session: Session) -> impl IntoResponse {
-    match session.get::<ZauthUser>("user").await.unwrap() {
-        None => Html(LOGIN_HTML.to_string()),
+pub async fn index(session: Session) -> Result<Html<String>, AppError> {
+    Ok(match session.get::<ZauthUser>("user").await? {
+        None => Page::login(),
+        Some(user) => Page::upload(&user.username, user.id),
+    })
+}
+
+pub async fn post_image(session: Session, mut multipart: Multipart) -> Result<Redirect, AppError> {
+    match session.get::<ZauthUser>("user").await? {
+        None => Ok(Redirect::to("/")),
         Some(user) => {
-            let html = UPLOAD_HTML
-                .replace("{{username}}", &user.username)
-                .replace("{{user_id}}", &user.id.to_string());
-            Html(html)
-        }
-    }
-}
-
-pub async fn image_index() -> impl IntoResponse {
-    Html(UPLOAD_HTML)
-}
-
-pub async fn post_image(session: Session, mut multipart: Multipart) -> impl IntoResponse {
-    match session.get::<ZauthUser>("user").await.unwrap() {
-        None => "Not logged in!".to_owned(),
-        Some(user) => {
-            while let Some(field) = multipart.next_field().await.unwrap() {
+            while let Some(field) = multipart.next_field().await? {
                 if let Some("image_file") = field.name() {
-                    let content_type = field.content_type().unwrap_or("").to_string();
-                    if content_type != "image/jpeg" && content_type != "image/png" {
-                        return "Please upload a jpeg or png".to_owned();
-                    }
-                    let data = field.bytes().await.unwrap();
+                    let data = field.bytes().await?;
 
-                    let path = image_path(user.id);
-                    fs::write(path, data).await.unwrap();
-                    let body = format!(
-                        "Success! view your image <a href=\"/image/{}\">here</a>",
-                        user.id
-                    );
-                    return body;
+                    ProfileImage::new(user.id)
+                        .with_data(&data)
+                        .await?
+                        .cropped()
+                        .save_sizes(&[64, 128, 256, 512])
+                        .await?;
+
+                    return Ok(Redirect::to("/"));
                 }
             }
-            "File not found".to_owned()
+            Err(AppError::NoFile)
         }
     }
 }
@@ -98,116 +101,65 @@ pub async fn post_image(session: Session, mut multipart: Multipart) -> impl Into
 #[derive(Deserialize)]
 pub struct PlaceholderQuery {
     placeholder: Option<bool>,
+    size: Option<u32>,
 }
 
 pub async fn get_image(
     Query(params): Query<PlaceholderQuery>,
-    Path(id): Path<u32>,
-) -> impl IntoResponse {
-    let path = image_path(id);
-    match tokio::fs::File::open(path).await {
-        Err(_) => {
-            if let Some(placeholder) = params.placeholder
-                && placeholder
-            {
-                Body::from_stream(ReaderStream::new(
-                    tokio::fs::File::open("./static/placeholder.jpg")
-                        .await
-                        .unwrap(),
-                ))
-            } else {
-                panic!();
-            }
-        }
-        Ok(file) => Body::from_stream(ReaderStream::new(file)),
+    Path(user_id): Path<u32>,
+    if_none_match: Option<TypedHeader<IfNoneMatch>>,
+) -> Result<Response, AppError> {
+    // default size
+    let size = params.size.unwrap_or(256);
+    let profile = ProfileImage::new(user_id);
+    let etag_opt = file_modified_etag(&profile.path(size)).await?;
+
+    // return early if etag matches
+    if etag_matches(&if_none_match, &etag_opt) {
+        return Ok(StatusCode::NOT_MODIFIED.into_response());
+    }
+
+    // get image (or placeholder, if requested) from disk
+    let mut resp = match params.placeholder {
+        Some(true) => profile.get_with_placeholder(size).await,
+        _ => profile.get(size).await,
+    }?
+    .into_response();
+
+    // set etag header if possible
+    if let Some(etag_string) = etag_opt
+        && let Ok(etag_header_val) = etag_string.parse()
+    {
+        resp.headers_mut().insert(ETAG, etag_header_val);
+    }
+
+    Ok(resp)
+}
+
+fn etag_matches(header: &Option<TypedHeader<IfNoneMatch>>, etag_string: &Option<String>) -> bool {
+    if let Some(if_none_match) = header
+        && let Some(etag_string) = etag_string
+        && let Ok(etag) = etag_string.parse::<ETag>()
+        && !if_none_match.precondition_passes(&etag)
+    {
+        true
+    } else {
+        false
     }
 }
 
-pub async fn login(session: Session) -> impl IntoResponse {
-    let state = Alphanumeric.sample_string(&mut rand::rng(), 16);
-    // insert state so we can check it in the callback
-    session.insert("state", state.clone()).await.unwrap();
-    // redirect to zauth to authenticate
-    let zauth_url = ZAUTH_URL.to_string();
-    let callback_url = CALLBACK_URL.to_string();
-    let zauth_client_id = ZAUTH_CLIENT_ID.to_string();
-    Redirect::to(&format!(
-        "{zauth_url}/oauth/authorize?client_id={zauth_client_id}&response_type=code&state={state}&redirect_uri={callback_url}"
-    ))
-}
+async fn file_modified_etag(path: &path::Path) -> Result<Option<String>, AppError> {
+    let metadata = match tokio::fs::metadata(&path).await {
+        Ok(metadata) => metadata,
+        Err(err) if err.kind() == NotFound => return Ok(None),
+        err => err?,
+    };
 
-pub async fn logout(session: Session) -> impl IntoResponse {
-    session.clear().await;
-    Redirect::to("/")
-}
+    let modified = metadata.modified()?;
 
-#[derive(Deserialize, Debug)]
-pub struct Callback {
-    state: String,
-    code: String,
-}
+    let mut hasher = DefaultHasher::new();
+    modified.hash(&mut hasher);
+    let hash = hasher.finish().to_string();
 
-#[derive(Deserialize, Debug)]
-pub struct ZauthToken {
-    access_token: String,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-pub struct ZauthUser {
-    id: u32,
-    username: String,
-}
-
-pub async fn callback(Query(params): Query<Callback>, session: Session) -> impl IntoResponse {
-    let zauth_state = session.get::<String>("state").await.unwrap().unwrap();
-
-    // check if saved state matches returned state
-    if zauth_state != params.state {
-        return Redirect::to("/");
-    }
-
-    let callback_url = CALLBACK_URL.to_string();
-    let client = reqwest::Client::new();
-    let form = [
-        ("grant_type", "authorization_code"),
-        ("code", &params.code),
-        ("redirect_uri", &callback_url),
-    ];
-
-    let zauth_url = ZAUTH_URL.to_string();
-    // get token from zauth with code
-    let token = client
-        .post(format!("{zauth_url}/oauth/token"))
-        .basic_auth(
-            ZAUTH_CLIENT_ID.to_string(),
-            Some(ZAUTH_CLIENT_SECRET.to_string()),
-        )
-        .form(&form)
-        .send()
-        .await
-        .unwrap()
-        .json::<ZauthToken>()
-        .await
-        .unwrap();
-
-    // get user info from zauth
-    let zauth_user = client
-        .get(format!("{zauth_url}/current_user"))
-        .header("Authorization", "Bearer ".to_owned() + &token.access_token)
-        .send()
-        .await
-        .unwrap()
-        .error_for_status()
-        .unwrap()
-        .json::<ZauthUser>()
-        .await
-        .unwrap();
-
-    session.clear().await;
-    session.insert("user", zauth_user).await.unwrap();
-    Redirect::to("/")
-}
-
-fn image_path(user_id: u32) -> PathBuf {
-    PathBuf::from(IMAGE_PATH.to_string()).join(user_id.to_string() + ".jpg")
+    Ok(Some(format!("\"{hash}\"")))
 }
