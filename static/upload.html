@@ -61,13 +61,13 @@
     function resetImage() {
         console.log('reset image');//TODO: Implement Reset Image
 
-        fetch("http://192.168.0.2:8000/reset", {
-            method: "POST",
+        fetch("/image", {
+            method: "DELETE",
             body: JSON.stringify({}),
             headers: {
                 "Content-type": "application/json; charset=UTF-8"
             }
-        }).then((response) => /*location.reload()*/console.log(response));
+        }).then(() => location.reload());
     }
 </script>
 </html>
