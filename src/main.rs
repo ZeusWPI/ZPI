@@ -34,6 +34,8 @@ static LOG_LEVEL: LazyLock<String> =
 
 static PLACEHOLDER: &[u8] = include_bytes!("../static/placeholder.jpg");
 
+static SIZES: &[u32] = &[64, 128, 256, 512];
+
 #[tokio::main]
 async fn main() -> Result<(), io::Error> {
     let _ = dotenvy::dotenv();
@@ -55,7 +57,7 @@ async fn main() -> Result<(), io::Error> {
         .route("/login", get(auth::login))
         .route("/oauth/callback", get(auth::callback))
         .route("/logout", get(auth::logout))
-        .route("/image", post(post_image))
+        .route("/image", post(post_image).delete(delete_image))
         .route("/image/{id}", get(get_image))
         .route("/{*wildcard}", get(|| async { Page::error("404") }))
         .layer(sess_mw)
@@ -87,7 +89,7 @@ pub async fn post_image(session: Session, mut multipart: Multipart) -> Result<Re
                         .with_data(&data)
                         .await?
                         .cropped()
-                        .save_sizes(&[64, 128, 256, 512])
+                        .save_sizes(SIZES)
                         .await?;
 
                     return Ok(Redirect::to("/"));
@@ -162,4 +164,22 @@ async fn file_modified_etag(path: &path::Path) -> Result<Option<String>, AppErro
     let hash = hasher.finish().to_string();
 
     Ok(Some(format!("\"{hash}\"")))
+}
+
+async fn delete_image(session: Session) -> Result<Redirect, AppError> {
+    match session.get::<ZauthUser>("user").await? {
+        None => Ok(Redirect::to("/login")),
+        Some(user) => {
+            let profile = ProfileImage::new(user.id);
+            for size in SIZES {
+                if let Err(e) = tokio::fs::remove_file(profile.path(*size)).await
+                    && e.kind() != NotFound
+                {
+                    Err(e)?;
+                }
+            }
+            tokio::fs::remove_file(profile.path_orig()).await?;
+            Ok(Redirect::to("/"))
+        }
+    }
 }
