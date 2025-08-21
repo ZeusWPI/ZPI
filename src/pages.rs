@@ -1,8 +1,8 @@
 use axum::response::Html;
 
-static LOGIN_HTML: &str = include_str!("../static/login.html");
-static UPLOAD_HTML: &str = include_str!("../static/upload.html");
-static ERROR_HTML: &str = include_str!("../static/error.html");
+static LOGIN_HTML: &str = include_str!("../templates/login.html");
+static UPLOAD_HTML: &str = include_str!("../templates/upload.html");
+static ERROR_HTML: &str = include_str!("../templates/error.html");
 
 pub struct Page;
 impl Page {
