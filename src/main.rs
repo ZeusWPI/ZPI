@@ -20,7 +20,7 @@ use pages::Page;
 use reqwest::{StatusCode, header::ETAG};
 use serde::Deserialize;
 use tokio::io::{self, ErrorKind::NotFound};
-use tower_http::trace::TraceLayer;
+use tower_http::{services::ServeDir, trace::TraceLayer};
 use tower_sessions::{MemoryStore, Session, SessionManagerLayer, cookie::SameSite};
 
 mod auth;
@@ -32,7 +32,7 @@ mod pages;
 static LOG_LEVEL: LazyLock<String> =
     LazyLock::new(|| env::var("LOG_LEVEL").unwrap_or("INFO".into()));
 
-static PLACEHOLDER: &[u8] = include_bytes!("../static/placeholder.jpg");
+static PLACEHOLDER: &[u8] = include_bytes!("../templates/placeholder.jpg");
 
 static SIZES: &[u32] = &[64, 128, 256, 512];
 
@@ -51,6 +51,7 @@ async fn main() -> Result<(), io::Error> {
 
     let sess_store = MemoryStore::default();
     let sess_mw = SessionManagerLayer::new(sess_store).with_same_site(SameSite::Lax);
+    let static_dir = ServeDir::new("./static");
 
     let app = Router::new()
         .route("/", get(index))
@@ -59,6 +60,7 @@ async fn main() -> Result<(), io::Error> {
         .route("/logout", get(auth::logout))
         .route("/image", post(post_image).delete(delete_image))
         .route("/image/{id}", get(get_image))
+        .nest_service("/static", static_dir)
         .route("/{*wildcard}", get(|| async { Page::error("404") }))
         .layer(sess_mw)
         .layer(DefaultBodyLimit::max(10_485_760))
