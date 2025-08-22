@@ -2,7 +2,6 @@ use std::{
     env,
     io::ErrorKind,
     path::PathBuf,
-    process::ExitStatus,
     sync::{Arc, LazyLock},
 };
 
@@ -101,7 +100,7 @@ impl DataImage {
     /// resize the image and save
     pub async fn save_size(&self, size: u32) -> Result<(), AppError> {
         // magick 102 -coalesce -resize "64x64^" -gravity center -crop "64x64+0+0" +repage out.webp
-        let output = Command::new("")
+        let output = Command::new(MAGICK_PATH.as_str())
             .args([
                 self.profile
                     .path_orig()

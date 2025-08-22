@@ -12,7 +12,7 @@ RUN mkdir src && \
     cargo build --release && \
     rm -rf src .cargo/
 
-COPY ./static ./static
+COPY ./templates ./templates
 COPY ./src ./src
 
 # make cargo detect new files
@@ -21,7 +21,9 @@ RUN cargo build --release
 
 FROM alpine:latest
 
-RUN apk add --no-cache openssl
+COPY ./static ./static
+
+RUN apk add --no-cache openssl imagemagick
 
 COPY --from=builder /usr/src/zpi/target/release/zpi /usr/local/bin/
 
