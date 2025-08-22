@@ -40,11 +40,17 @@ pub enum ResponseImage {
 
 impl ProfileImage {
     pub fn new(user_id: u32) -> Self {
+        tracing::debug!("new user with id {user_id}");
         Self { user_id }
     }
 
     pub async fn with_data(self, data: &[u8]) -> Result<DataImage, AppError> {
         // save original
+        tracing::debug!(
+            "saving original image on {} with data length {}",
+            self.path_orig().display(),
+            data.len()
+        );
         let path = self.path_orig();
         tokio::fs::write(path, data).await?;
 
@@ -82,6 +88,7 @@ impl ProfileImage {
 impl DataImage {
     /// save as multiple sizes
     pub async fn save_sizes(self, sizes: &[u32]) -> Result<(), AppError> {
+        tracing::debug!("saving images with sizes {:?}", sizes);
         let mut set = JoinSet::new();
         let image = Arc::new(self);
 
@@ -100,30 +107,42 @@ impl DataImage {
     /// resize the image and save
     pub async fn save_size(&self, size: u32) -> Result<(), AppError> {
         // magick 102 -coalesce -resize "64x64^" -gravity center -crop "64x64+0+0" +repage out.webp
+        let orig_path = self.profile.path_orig();
+        let sized_path = self.profile.path(size);
+        let resize_arg = format!("{size}x{size}^");
+        let crop_arg = format!("{size}x{size}+0+0");
+
+        let args = [
+            orig_path
+                .to_str()
+                .ok_or(AppError::Internal("invalid path".into()))?,
+            "-coalesce",
+            "-filter",
+            "Robidoux",
+            "-resize",
+            resize_arg.as_str(),
+            "-gravity",
+            "center",
+            "-crop",
+            crop_arg.as_str(),
+            "+repage",
+            sized_path
+                .to_str()
+                .ok_or(AppError::Internal("invalid path".into()))?,
+        ];
+
+        tracing::debug!(
+            "running command {} with args {:?}",
+            MAGICK_PATH.as_str(),
+            args
+        );
+
         let output = Command::new(MAGICK_PATH.as_str())
-            .args([
-                self.profile
-                    .path_orig()
-                    .to_str()
-                    .ok_or(AppError::Internal("invalid path".into()))?,
-                "-coalesce",
-                "-filter",
-                "Robidoux",
-                "-resize",
-                format!("{size}x{size}^").as_str(),
-                "-gravity",
-                "center",
-                "-crop",
-                format!("{size}x{size}+0+0").as_str(),
-                "+repage",
-                self.profile
-                    .path(size)
-                    .to_str()
-                    .ok_or(AppError::Internal("invalid path".into()))?,
-            ])
+            .args(args)
             .output()
             .await?;
 
+        tracing::debug!("command ran with status code {}", output.status);
         // if magick was not success
         if !output.status.success() {
             return Err(AppError::Magick(

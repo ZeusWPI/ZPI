@@ -23,7 +23,7 @@ FROM alpine:latest
 
 COPY ./static ./static
 
-RUN apk add --no-cache openssl imagemagick
+RUN apk add --no-cache openssl imagemagick libwebp
 
 COPY --from=builder /usr/src/zpi/target/release/zpi /usr/local/bin/
 
