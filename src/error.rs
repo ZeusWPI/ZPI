@@ -20,6 +20,7 @@ pub enum AppError {
     Reqwest(ReqwestError),
     Image(ImageError),
     Resize(ResizeError),
+    Magick(String),
     ImageResTooLarge,
     ImageNotFound,
     WrongFileType,
@@ -78,7 +79,7 @@ impl IntoResponse for AppError {
                 (StatusCode::INTERNAL_SERVER_ERROR, "Reqwest error")
             }
             AppError::Io(err) => {
-                tracing::error!("Io error {}", err);
+                tracing::error!("IO error {}", err);
                 (StatusCode::INTERNAL_SERVER_ERROR, "Io error")
             }
             AppError::Internal(err) => {
@@ -100,6 +101,10 @@ impl IntoResponse for AppError {
             AppError::Image(err) => {
                 tracing::error!("Image error {}", err);
                 (StatusCode::INTERNAL_SERVER_ERROR, "Image error")
+            }
+            AppError::Magick(stderr) => {
+                tracing::error!("Magick error {}", stderr);
+                (StatusCode::INTERNAL_SERVER_ERROR, "Error with magick")
             }
             AppError::WrongFileType => (StatusCode::BAD_REQUEST, "Please give a jpg file"),
             AppError::ImageNotFound => (StatusCode::NOT_FOUND, "No image for this user"),

@@ -2,6 +2,7 @@ use std::{
     env,
     io::ErrorKind,
     path::PathBuf,
+    process::ExitStatus,
     sync::{Arc, LazyLock},
 };
 
@@ -10,10 +11,9 @@ use axum::{
     http::HeaderValue,
     response::{IntoResponse, Response},
 };
-use fast_image_resize::{IntoImageView, Resizer, images::Image};
-use image::{DynamicImage, GenericImageView, codecs::jpeg::JpegEncoder};
+
 use reqwest::header::CONTENT_TYPE;
-use tokio::{fs::File, io::AsyncWriteExt, task::JoinSet};
+use tokio::{fs::File, process::Command, task::JoinSet};
 use tokio_util::io::ReaderStream;
 
 use crate::{PLACEHOLDER, error::AppError, format::SupportedFormat};
@@ -21,7 +21,10 @@ use crate::{PLACEHOLDER, error::AppError, format::SupportedFormat};
 static IMAGE_PATH: LazyLock<String> =
     LazyLock::new(|| env::var("IMAGE_PATH").expect("IMAGE_PATH not present"));
 
-static IMAGE_SAVE_TYPE: SupportedFormat = SupportedFormat::Jpeg;
+static MAGICK_PATH: LazyLock<String> =
+    LazyLock::new(|| env::var("MAGICK_PATH").expect("MAGICK_PATH not present"));
+
+static IMAGE_SAVE_TYPE: SupportedFormat = SupportedFormat::Webp;
 
 pub struct ProfileImage {
     user_id: u32,
@@ -29,7 +32,6 @@ pub struct ProfileImage {
 
 pub struct DataImage {
     profile: ProfileImage,
-    image: DynamicImage,
 }
 
 pub enum ResponseImage {
@@ -47,17 +49,7 @@ impl ProfileImage {
         let path = self.path_orig();
         tokio::fs::write(path, data).await?;
 
-        let format = SupportedFormat::guess(data)?;
-        let image = image::load_from_memory_with_format(data, format.into())?;
-
-        if image.dimensions() > (10_000, 10_000) {
-            return Err(AppError::ImageResTooLarge);
-        }
-
-        Ok(DataImage {
-            profile: self,
-            image,
-        })
+        Ok(DataImage { profile: self })
     }
 
     pub async fn get(&self, size: u32) -> Result<ResponseImage, AppError> {
@@ -89,23 +81,6 @@ impl ProfileImage {
 }
 
 impl DataImage {
-    /// crop the image to a square
-    pub fn cropped(self) -> Self {
-        let (width, heigth) = self.image.dimensions();
-        let crop_dimension = width.min(heigth);
-        let cropped_img = self.image.crop_imm(
-            (width - crop_dimension) / 2,
-            (heigth - crop_dimension) / 2,
-            crop_dimension,
-            crop_dimension,
-        );
-
-        Self {
-            image: cropped_img,
-            ..self
-        }
-    }
-
     /// save as multiple sizes
     pub async fn save_sizes(self, sizes: &[u32]) -> Result<(), AppError> {
         let mut set = JoinSet::new();
@@ -125,30 +100,39 @@ impl DataImage {
 
     /// resize the image and save
     pub async fn save_size(&self, size: u32) -> Result<(), AppError> {
-        // create a destination image buffer
-        let mut resized_image = Image::new(
-            size,
-            size,
-            self.image
-                .pixel_type()
-                .ok_or(AppError::Internal("image pixel type err".into()))?,
-        );
+        // magick 102 -coalesce -resize "64x64^" -gravity center -crop "64x64+0+0" +repage out.webp
+        let output = Command::new("")
+            .args([
+                self.profile
+                    .path_orig()
+                    .to_str()
+                    .ok_or(AppError::Internal("invalid path".into()))?,
+                "-coalesce",
+                "-filter",
+                "Robidoux",
+                "-resize",
+                format!("{size}x{size}^").as_str(),
+                "-gravity",
+                "center",
+                "-crop",
+                format!("{size}x{size}+0+0").as_str(),
+                "+repage",
+                self.profile
+                    .path(size)
+                    .to_str()
+                    .ok_or(AppError::Internal("invalid path".into()))?,
+            ])
+            .output()
+            .await?;
 
-        // resize image
-        Resizer::new().resize(&self.image, &mut resized_image, None)?;
-
-        // write resized image to buffer
-        let mut buffer = Vec::new();
-        JpegEncoder::new(&mut buffer).encode(
-            resized_image.buffer(),
-            size,
-            size,
-            self.image.color().into(),
-        )?;
-
-        // save image buffer to file
-        let mut file = File::create(self.profile.path(size)).await?;
-        file.write_all(&buffer).await?;
+        // if magick was not success
+        if !output.status.success() {
+            return Err(AppError::Magick(
+                str::from_utf8(&output.stderr)
+                    .or(Err(AppError::Internal("utf8".into())))?
+                    .to_string(),
+            ));
+        }
 
         Ok(())
     }
