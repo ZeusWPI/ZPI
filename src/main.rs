@@ -90,7 +90,6 @@ pub async fn post_image(session: Session, mut multipart: Multipart) -> Result<Re
                     ProfileImage::new(user.id)
                         .with_data(&data)
                         .await?
-                        .cropped()
                         .save_sizes(SIZES)
                         .await?;
 
