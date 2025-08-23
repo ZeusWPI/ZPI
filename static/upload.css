@@ -1,0 +1,164 @@
+
+* {
+    --background-color: #fff;
+    --text-color: #000;
+    --alt-text-color: #ccc;
+    --primary-color: #ff7f00;
+    --secondary-color: #f9c898;
+}
+
+@media (prefers-color-scheme: dark) {
+    * {
+        --background-color: #222;
+        --text-color: #fff;
+        --alt-text-color: #444;
+        --secondary-color: #ffb36d;
+    }
+}
+
+body {
+    font-family: sans-serif;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    margin: 0;
+    background-color: var(--background-color);
+    color: var(--text-color)
+}
+.icon {
+    height: 1.1em;
+    margin-right: 0.2em;
+}
+
+#site-label:before {
+    content: "ZPI";
+    font-size: 7vmin;
+    font-weight: bold;
+    margin-bottom: 3vmin;
+    color: var(--primary-color);
+    animation-name: WpiFlicker;
+    animation-duration: 100ms;
+    animation-delay: 2s;
+}
+
+
+h1 {
+    font-size: 5vmin;
+    margin: 2px;
+}
+
+form {
+    margin: 0;
+}
+
+.main-container {
+    flex-direction: column;
+    display: flex;
+    align-items: center;
+}
+
+#current-reset-box {
+    display: flex;
+    flex-direction: row;
+}
+
+#current-pfp {
+    width: 25vmin;
+    height: 25vmin;
+    border-radius: 60px;
+    border-style: dashed;
+    border-width: 0.6vmin;
+    border-color: #888;
+    padding: 0.2vmin;
+}
+
+#reset-btn {
+    margin-top: 0.5vmin;
+    width: 27vmin;
+    padding: 0.2vmin;
+    border-radius: 1vmin;
+    border-width: 0.6vmin;
+    border-color: #ff7f00;
+    border-style: solid;
+    height: 4vmin;
+}
+
+#file-selector {
+    opacity: 0;
+    width: 0.1px;
+    height: 0.1px;
+}
+
+.btn {
+    display: flex;
+    font-weight: bold;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    border-style: solid;
+    border-width: 0.5em;
+    width: 20vmin;
+    border-radius: 1em;
+    height: 6vmin;
+    margin: 0.4vmin;
+
+    font-size: 2.2vmin;
+}
+
+.btn:active {
+    transform: translate(0, 1px);
+}
+
+.btn-secondary {
+    background-color: var(--secondary-color);
+    color: #333;
+}
+
+.btn-primary {
+    width: 21.5vmin;
+    height: 7vmin;
+    color: white;
+}
+
+#image-file {
+    width: 15vmin;
+    height: 15vmin;
+    border-radius: 20px;
+    margin-right: 1em;
+}
+
+#submit-box {
+    margin-top: 5vmin;
+    display: flex;
+    align-items: center;
+}
+
+#version-lbl {
+    color: var(--alt-text-color);
+    margin-top: 1vh;
+    font-size: 2vmin;
+}
+
+.material-symbols-outlined {
+    padding-right: 2px;
+    font-variation-settings: 'FILL' 0,
+    'wght' 400,
+    'GRAD' 0,
+    'opsz' 24
+}
+
+@keyframes WpiFlicker {
+    0% {
+        content: "ZPI";
+    }
+    50% {
+        content: "WPI";
+    }
+    100% {
+        content: "ZPI";
+    }
+
+}
