@@ -14,10 +14,10 @@
         <img class="icon" src="/static/reset.svg"  alt="Reset Icon"/>Reset
     </button>
 
-    <h1>{{username}}</h1>
+    <h1>{{username}} <a href="/logout"><img id="logout-icon" class="icon" src="/static/logout.svg" alt="Logout Icon"></a> </h1>
     <div id="submit-box">
 
-        <img id="image-file" src="/static/preview.svg" alt="Pfp Preview">
+        <img id="image-file" src="/static/preview.svg" alt="Pfp Preview" aria-placeholder>
 
         <form action="/image" method="post" enctype="multipart/form-data">
             <div id="button-box">
@@ -45,6 +45,7 @@
                 reader.onload = function (e) {
                     image = document.querySelector('#' + input.name);
                     image.src = e.target.result;
+                    image.removeAttribute("aria-placeholder")
                 };
                 reader.readAsDataURL(this.files[0]);
             }

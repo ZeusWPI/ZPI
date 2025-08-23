@@ -14,6 +14,12 @@
         --alt-text-color: #444;
         --secondary-color: #ffb36d;
     }
+    #logout-icon {
+        filter: invert();
+    }
+    #image-file[aria-placeholder] {
+        filter: invert() contrast(60%);
+    }
 }
 
 body {
@@ -30,6 +36,9 @@ body {
     height: 1.1em;
     margin-right: 0.2em;
 }
+#logout-icon {
+    margin-left: 0.2em;
+}
 
 #site-label:before {
     content: "ZPI";
@@ -44,8 +53,10 @@ body {
 
 
 h1 {
+    display: flex;
     font-size: 5vmin;
-    margin: 2px;
+    margin: 8px;
+    justify-content: center;
 }
 
 form {
@@ -121,6 +132,10 @@ form {
     width: 21.5vmin;
     height: 7vmin;
     color: white;
+}
+#button-box {
+    display: flex;
+    flex-direction: column;
 }
 
 #image-file {
