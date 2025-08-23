@@ -2,7 +2,6 @@ use axum::{
     extract::multipart::MultipartError,
     response::{IntoResponse, Response},
 };
-use fast_image_resize::ResizeError;
 use image::ImageError;
 use reqwest::Error as ReqwestError;
 use reqwest::StatusCode;
@@ -19,7 +18,6 @@ pub enum AppError {
     Zauth(String),
     Reqwest(ReqwestError),
     Image(ImageError),
-    Resize(ResizeError),
     Magick(String),
     ImageResTooLarge,
     ImageNotFound,
@@ -57,12 +55,6 @@ impl From<ImageError> for AppError {
     }
 }
 
-impl From<ResizeError> for AppError {
-    fn from(value: ResizeError) -> Self {
-        AppError::Resize(value)
-    }
-}
-
 impl IntoResponse for AppError {
     fn into_response(self) -> Response {
         let (code, message) = match self {
@@ -94,10 +86,6 @@ impl IntoResponse for AppError {
                 StatusCode::BAD_REQUEST,
                 "Maximum image resolution is 10k x 10k pixels",
             ),
-            AppError::Resize(err) => {
-                tracing::error!("Resize error {}", err);
-                (StatusCode::INTERNAL_SERVER_ERROR, "Resize error")
-            }
             AppError::Image(err) => {
                 tracing::error!("Image error {}", err);
                 (StatusCode::INTERNAL_SERVER_ERROR, "Image error")
