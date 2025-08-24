@@ -11,16 +11,16 @@ use axum::{
     response::{IntoResponse, Response},
 };
 
-use rand::{Rng, SeedableRng, rngs::SmallRng, seq::IndexedRandom};
+use rand::{SeedableRng, rngs::SmallRng, seq::IndexedRandom};
 use reqwest::header::CONTENT_TYPE;
 use svg::{
     Document,
-    node::element::{Definitions, Group, Mask, Polygon, Polyline, Rectangle, Use, tag::Rectangle},
+    node::element::{Definitions, Group, Mask, Polygon, Polyline, Rectangle, Use},
 };
 use tokio::{fs::File, process::Command, task::JoinSet};
 use tokio_util::io::ReaderStream;
 
-use crate::{PLACEHOLDER, error::AppError, format::SupportedFormat};
+use crate::{error::AppError, format::SupportedFormat};
 
 static IMAGE_PATH: LazyLock<String> =
     LazyLock::new(|| env::var("IMAGE_PATH").expect("IMAGE_PATH not present"));

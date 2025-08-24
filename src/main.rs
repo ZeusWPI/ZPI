@@ -32,8 +32,6 @@ mod pages;
 static LOG_LEVEL: LazyLock<String> =
     LazyLock::new(|| env::var("LOG_LEVEL").unwrap_or("INFO".into()));
 
-static PLACEHOLDER: &[u8] = include_bytes!("../templates/placeholder.jpg");
-
 static SIZES: &[u32] = &[64, 128, 256, 512];
 
 #[tokio::main]
@@ -102,18 +100,25 @@ pub async fn post_image(session: Session, mut multipart: Multipart) -> Result<Re
 }
 
 #[derive(Deserialize)]
-pub struct PlaceholderQuery {
+pub struct GetImageQuery {
     placeholder: Option<bool>,
     size: Option<u32>,
 }
 
 pub async fn get_image(
-    Query(params): Query<PlaceholderQuery>,
+    Query(params): Query<GetImageQuery>,
     Path(user_id): Path<u32>,
     if_none_match: Option<TypedHeader<IfNoneMatch>>,
 ) -> Result<Response, AppError> {
     // default size
-    let size = params.size.unwrap_or(256);
+    let requested_size = params.size.unwrap_or(256);
+    // get closest size that is bigger, or largest
+    let size = *SIZES
+        .iter()
+        .filter(|x| **x > requested_size)
+        .min()
+        .unwrap_or(SIZES.iter().max().unwrap());
+    dbg!(size);
     let profile = ProfileImage::new(user_id);
     let etag_opt = file_modified_etag(&profile.path(size)).await?;
 
