@@ -25,6 +25,8 @@ COPY ./static ./static
 
 RUN apk add --no-cache openssl imagemagick libwebp imagemagick-jpeg
 
+ENV MAGICK_PATH=/usr/bin/magick
+
 COPY --from=builder /usr/src/zpi/target/release/zpi /usr/local/bin/
 
 CMD ["/usr/local/bin/zpi"]
