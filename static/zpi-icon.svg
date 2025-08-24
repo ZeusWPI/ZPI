@@ -1,0 +1,25 @@
+<svg height="64" width="64" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <mask height="200" id="poly" maskUnits="userSpaceOnUse" width="200" x="-100" y="-100">
+        <polygon fill="white" points="9.0,0.0 4.5,7.794 -4.5,7.794 -9.0,0 -4.5,-7.794 4.5,-7.794"/>
+    </mask>
+    <defs>
+        <g id="cube">
+            <polygon points="9.0,0.0 4.5,7.794 -4.5,7.794 -9.0,0 -4.5,-7.794 4.5,-7.794"/>
+            <polyline mask="url(#poly)" points="9,0 0,0 -4.5,7.794 0,0 -4.5,-7.794" style="fill:none;stroke:#02020244;stroke-width:.6"/>
+        </g>
+    </defs>
+    <g transform="translate(3, 6)">
+        <path fill="#EEE" d="M45.08,48.8c-.9,1.5-2.4,2.4-4.1,2.4h-24c-1.7,0-3.3-.9-4.1-2.4L.67,28c-.9-1.5-.9-3.3,0-4.8L12.68,2.4c.9-1.5,2.4-2.4,4.1-2.4h24c1.7,0,3.3.9,4.1,2.4l12,20.8c.9,1.5.9,3.3,0,4.8l-11.8,20.8Z"/>
+    </g>
+    <g transform="rotate(0 32 32) scale(0.8) translate(8,8)">
+        <use fill="#FF7F00" x="22" xlink:href="#cube" y="14.68"/>
+        <use fill="#FF7F00" x="42" xlink:href="#cube" y="14.68"/>
+        <use fill="#FF7F00" x="12" xlink:href="#cube" y="32"/>
+        <use fill="#FF7F00" x="52" xlink:href="#cube" y="32"/>
+        <use fill="#FF7F00" x="22" xlink:href="#cube" y="49.32"/>
+        <use fill="#FF7F00" x="42" xlink:href="#cube" y="49.32"/>
+        <use fill="#FF7F00" x="32" xlink:href="#cube" y="32"/>
+    </g>
+
+
+</svg>
