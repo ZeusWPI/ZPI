@@ -50,6 +50,10 @@ impl ProfileImage {
     }
 
     pub async fn with_data(self, data: &[u8]) -> Result<DataImage, AppError> {
+        if data.is_empty() {
+            return Err(AppError::NoFile);
+        }
+
         // save original
         tracing::debug!(
             "saving original image on {} with data length {}",
