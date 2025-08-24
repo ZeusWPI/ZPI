@@ -12,6 +12,7 @@ use reqwest::StatusCode;
 use tokio::io::{self};
 use tower_http::{compression::CompressionLayer, services::ServeDir, trace::TraceLayer};
 use tower_sessions::{MemoryStore, Session, SessionManagerLayer, cookie::SameSite};
+use tracing_subscriber::{EnvFilter, fmt, prelude::*};
 
 use crate::handlers::{
     auth::{Auth, ZauthUser},
@@ -24,21 +25,14 @@ mod handlers;
 mod image;
 mod pages;
 
-static LOG_LEVEL: LazyLock<String> =
-    LazyLock::new(|| env::var("LOG_LEVEL").unwrap_or("INFO".into()));
-
 #[tokio::main]
 async fn main() -> Result<(), io::Error> {
     let _ = dotenvy::dotenv();
 
-    let log_level = match LOG_LEVEL.as_str() {
-        "DEBUG" => tracing::Level::DEBUG,
-        "INFO" => tracing::Level::INFO,
-        "WARN" => tracing::Level::WARN,
-        _ => tracing::Level::INFO,
-    };
-
-    tracing_subscriber::fmt().with_max_level(log_level).init();
+    tracing_subscriber::registry()
+        .with(fmt::layer())
+        .with(EnvFilter::from_env("LOG_LEVEL"))
+        .init();
 
     let sess_store = MemoryStore::default();
     let sess_mw = SessionManagerLayer::new(sess_store).with_same_site(SameSite::Lax);
@@ -52,17 +46,16 @@ async fn main() -> Result<(), io::Error> {
         .route("/image", post(Image::post).delete(Image::delete))
         .route("/image/{id}", get(Image::get))
         .nest_service("/static", static_dir)
-        .route(
-            "/{*wildcard}",
-            get(|| async { Page::error(StatusCode::NOT_FOUND, "404") }),
-        )
+        .fallback(get(|| async { Page::error(StatusCode::NOT_FOUND, "404") }))
         .layer(sess_mw)
         .layer(DefaultBodyLimit::max(10_485_760))
         .layer(CompressionLayer::new())
         .layer(TraceLayer::new_for_http());
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await?;
-    axum::serve(listener, app).await?;
+    axum::serve(listener, app)
+        .with_graceful_shutdown(shutdown_signal())
+        .await?;
 
     Ok(())
 }
@@ -72,4 +65,28 @@ pub async fn index(session: Session) -> Result<Html<String>, AppError> {
         None => Page::login(),
         Some(user) => Page::upload(&user.username, user.id),
     })
+}
+
+async fn shutdown_signal() {
+    let ctrl_c = async {
+        tokio::signal::ctrl_c()
+            .await
+            .expect("failed to install Ctrl+C handler");
+    };
+
+    #[cfg(unix)]
+    let terminate = async {
+        tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())
+            .expect("failed to install signal handler")
+            .recv()
+            .await;
+    };
+
+    #[cfg(not(unix))]
+    let terminate = std::future::pending::<()>();
+
+    tokio::select! {
+        _ = ctrl_c => {},
+        _ = terminate => {},
+    }
 }
