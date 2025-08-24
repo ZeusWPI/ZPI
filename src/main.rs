@@ -10,7 +10,7 @@ use error::AppError;
 use pages::Page;
 use reqwest::StatusCode;
 use tokio::io::{self};
-use tower_http::{services::ServeDir, trace::TraceLayer};
+use tower_http::{compression::CompressionLayer, services::ServeDir, trace::TraceLayer};
 use tower_sessions::{MemoryStore, Session, SessionManagerLayer, cookie::SameSite};
 
 use crate::handlers::{
@@ -58,6 +58,7 @@ async fn main() -> Result<(), io::Error> {
         )
         .layer(sess_mw)
         .layer(DefaultBodyLimit::max(10_485_760))
+        .layer(CompressionLayer::new())
         .layer(TraceLayer::new_for_http());
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await?;
