@@ -1,6 +1,6 @@
 use axum::{
     extract::multipart::MultipartError,
-    response::{IntoResponse, Response},
+    response::{IntoResponse, Redirect, Response},
 };
 use image::ImageError;
 use reqwest::Error as ReqwestError;
@@ -23,6 +23,63 @@ pub enum AppError {
     ImageNotFound,
     WrongFileType,
     NoFile,
+    NotLoggedIn,
+}
+
+impl IntoResponse for AppError {
+    fn into_response(self) -> Response {
+        match self {
+            AppError::NotLoggedIn => Redirect::to("/login").into_response(),
+            AppError::Session(err) => {
+                tracing::error!("Session error {}", err);
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    Page::error("Session error"),
+                )
+                    .into_response()
+            }
+            AppError::Zauth(err) => {
+                tracing::error!("Zauth error {}", err);
+                (StatusCode::INTERNAL_SERVER_ERROR, "Zauth error").into_response()
+            }
+            AppError::Reqwest(err) => {
+                tracing::error!("Reqwest error {}", err);
+                (StatusCode::INTERNAL_SERVER_ERROR, "Reqwest error").into_response()
+            }
+            AppError::Io(err) => {
+                tracing::error!("IO error {}", err);
+                (StatusCode::INTERNAL_SERVER_ERROR, "Io error").into_response()
+            }
+            AppError::Internal(err) => {
+                tracing::error!("Internal error {}", err);
+                (StatusCode::INTERNAL_SERVER_ERROR, "Internal error").into_response()
+            }
+            AppError::Multipart(err) => {
+                tracing::error!("Multipart error {}", err);
+                (StatusCode::BAD_REQUEST, "Multipart error").into_response()
+            }
+            AppError::ImageResTooLarge => (
+                StatusCode::BAD_REQUEST,
+                "Maximum image resolution is 10k x 10k pixels",
+            )
+                .into_response(),
+            AppError::Image(err) => {
+                tracing::error!("Image error {}", err);
+                (StatusCode::INTERNAL_SERVER_ERROR, "Image error").into_response()
+            }
+            AppError::Magick(stderr) => {
+                tracing::error!("Magick error {}", stderr);
+                (StatusCode::INTERNAL_SERVER_ERROR, "Error with magick").into_response()
+            }
+            AppError::WrongFileType => {
+                (StatusCode::BAD_REQUEST, "Please give a jpg file").into_response()
+            }
+            AppError::ImageNotFound => {
+                (StatusCode::NOT_FOUND, "No image for this user").into_response()
+            }
+            AppError::NoFile => (StatusCode::BAD_REQUEST, "Please give a file").into_response(),
+        }
+    }
 }
 
 impl From<TowerError> for AppError {
@@ -52,52 +109,5 @@ impl From<ReqwestError> for AppError {
 impl From<ImageError> for AppError {
     fn from(value: ImageError) -> Self {
         AppError::Image(value)
-    }
-}
-
-impl IntoResponse for AppError {
-    fn into_response(self) -> Response {
-        let (code, message) = match self {
-            AppError::Session(err) => {
-                tracing::error!("Session error {}", err);
-                (StatusCode::INTERNAL_SERVER_ERROR, "Session error")
-            }
-            AppError::Zauth(err) => {
-                tracing::error!("Zauth error {}", err);
-                (StatusCode::INTERNAL_SERVER_ERROR, "Zauth error")
-            }
-            AppError::Reqwest(err) => {
-                tracing::error!("Reqwest error {}", err);
-                (StatusCode::INTERNAL_SERVER_ERROR, "Reqwest error")
-            }
-            AppError::Io(err) => {
-                tracing::error!("IO error {}", err);
-                (StatusCode::INTERNAL_SERVER_ERROR, "Io error")
-            }
-            AppError::Internal(err) => {
-                tracing::error!("Internal error {}", err);
-                (StatusCode::INTERNAL_SERVER_ERROR, "Internal error")
-            }
-            AppError::Multipart(err) => {
-                tracing::error!("Multipart error {}", err);
-                (StatusCode::BAD_REQUEST, "Multipart error")
-            }
-            AppError::ImageResTooLarge => (
-                StatusCode::BAD_REQUEST,
-                "Maximum image resolution is 10k x 10k pixels",
-            ),
-            AppError::Image(err) => {
-                tracing::error!("Image error {}", err);
-                (StatusCode::INTERNAL_SERVER_ERROR, "Image error")
-            }
-            AppError::Magick(stderr) => {
-                tracing::error!("Magick error {}", stderr);
-                (StatusCode::INTERNAL_SERVER_ERROR, "Error with magick")
-            }
-            AppError::WrongFileType => (StatusCode::BAD_REQUEST, "Please give a jpg file"),
-            AppError::ImageNotFound => (StatusCode::NOT_FOUND, "No image for this user"),
-            AppError::NoFile => (StatusCode::BAD_REQUEST, "Please give a file"),
-        };
-        (code, Page::error(message)).into_response()
     }
 }

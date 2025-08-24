@@ -12,37 +12,14 @@ use axum_extra::TypedHeader;
 use headers::{ETag, IfNoneMatch};
 use reqwest::{StatusCode, header::ETAG};
 use serde::Deserialize;
-use tower_sessions::Session;
 
-use crate::{error::AppError, handlers::auth::ZauthUser, image::ProfileImage};
+use crate::{error::AppError, handlers::AuthenticatedUser, image::ProfileImage};
 
 static SIZES: &[u32] = &[64, 128, 256, 512];
 
 pub struct Image;
 
 impl Image {
-    pub async fn post(session: Session, mut multipart: Multipart) -> Result<Redirect, AppError> {
-        match session.get::<ZauthUser>("user").await? {
-            None => Ok(Redirect::to("/")),
-            Some(user) => {
-                while let Some(field) = multipart.next_field().await? {
-                    if let Some("image_file") = field.name() {
-                        let data = field.bytes().await?;
-
-                        ProfileImage::new(user.id)
-                            .with_data(&data)
-                            .await?
-                            .save_sizes(SIZES)
-                            .await?;
-
-                        return Ok(Redirect::to("/"));
-                    }
-                }
-                Err(AppError::NoFile)
-            }
-        }
-    }
-
     pub async fn get(
         Query(params): Query<GetImageQuery>,
         Path(user_id): Path<u32>,
@@ -82,22 +59,37 @@ impl Image {
         Ok(resp)
     }
 
-    pub async fn delete(session: Session) -> Result<Redirect, AppError> {
-        match session.get::<ZauthUser>("user").await? {
-            None => Ok(Redirect::to("/login")),
-            Some(user) => {
-                let profile = ProfileImage::new(user.id);
-                for size in SIZES {
-                    if let Err(e) = tokio::fs::remove_file(profile.path(*size)).await
-                        && e.kind() != NotFound
-                    {
-                        Err(e)?;
-                    }
-                }
-                tokio::fs::remove_file(profile.path_orig()).await?;
-                Ok(Redirect::to("/"))
+    pub async fn post(
+        user: AuthenticatedUser,
+        mut multipart: Multipart,
+    ) -> Result<Redirect, AppError> {
+        while let Some(field) = multipart.next_field().await? {
+            if let Some("image_file") = field.name() {
+                let data = field.bytes().await?;
+
+                ProfileImage::new(user.id)
+                    .with_data(&data)
+                    .await?
+                    .save_sizes(SIZES)
+                    .await?;
+
+                return Ok(Redirect::to("/"));
             }
         }
+        Err(AppError::NoFile)
+    }
+
+    pub async fn delete(user: AuthenticatedUser) -> Result<Redirect, AppError> {
+        let profile = ProfileImage::new(user.id);
+        for size in SIZES {
+            if let Err(e) = tokio::fs::remove_file(profile.path(*size)).await
+                && e.kind() != NotFound
+            {
+                Err(e)?;
+            }
+        }
+        tokio::fs::remove_file(profile.path_orig()).await?;
+        Ok(Redirect::to("/"))
     }
 }
 
