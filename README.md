@@ -1,10 +1,10 @@
 # Zeus Profile Images
 
-let people upload profile imagess and make them available on an endpoint.
+let people upload profile images and make them available on a public endpoint.
 
 # running
 
-```
+```bash
 cp .env.example .env
 cargo run
 ```
@@ -17,14 +17,14 @@ login with zauth, upload an image
 
 GET `/image/{zauth_user_id}` -> gives that user's profile image
 
-You can give any optional query parameters to change what reply you receive:
+You can give any optional query parameters to change which reply you receive:
 
 | query param | value                        | explanation                                 | default |
 | ----------- | ---------------------------- | ------------------------------------------- | ------- |
 | placeholder | `true` / `false`             | return a placeholder when user has no image | `false` |
 | size        | `64` / `128` / `256` / `512` | square resolution of the image              | `256`   |
 
-> [!INFO]
+> [!NOTE]
 > `size` will return the next largest image if requested value is not available
 
 # config
