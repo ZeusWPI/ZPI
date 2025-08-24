@@ -67,32 +67,31 @@ impl IntoResponse for AppError {
 
 impl AppError {
     fn error_page(&self) -> (StatusCode, Html<String>) {
-        match self {
+        let (status, msg) = match self {
             Self::NoFile => (
                 StatusCode::BAD_REQUEST,
-                Page::error("No file found in request."),
+                "No file found in request. Please select an image.",
             ),
             Self::Multipart(_) => (
                 StatusCode::BAD_REQUEST,
-                Page::error("There was a problem with your file upload. Please try again."),
+                "There was a problem with your file upload. Please try again.",
             ),
             Self::ImageResTooLarge => (
                 StatusCode::PAYLOAD_TOO_LARGE,
-                Page::error("The image resolution is too large. Maximum is 10k x 10k pixels."),
+                "The image resolution is too large. Maximum is 10k x 10k pixels.",
             ),
             Self::WrongFileType => (
                 StatusCode::BAD_REQUEST,
-                Page::error("Incorrect file type. Please upload a JPG, PNG, GIF, or WEBP file."),
+                "Incorrect file type. Please upload a JPG, PNG, GIF, or WEBP file.",
             ),
-            Self::ImageNotFound => (
-                StatusCode::NOT_FOUND,
-                Page::error("We couldn't find that image."),
-            ),
+            Self::ImageNotFound => (StatusCode::NOT_FOUND, "We couldn't find that image."),
 
             _ => (
                 StatusCode::INTERNAL_SERVER_ERROR,
-                Page::error("Please help I have internal errors."),
+                "Please help I have internal errors. D:",
             ),
-        }
+        };
+
+        (status, Page::error(status, msg))
     }
 }

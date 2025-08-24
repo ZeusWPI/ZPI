@@ -8,6 +8,7 @@ use axum::{
 };
 use error::AppError;
 use pages::Page;
+use reqwest::StatusCode;
 use tokio::io::{self};
 use tower_http::{services::ServeDir, trace::TraceLayer};
 use tower_sessions::{MemoryStore, Session, SessionManagerLayer, cookie::SameSite};
@@ -51,7 +52,10 @@ async fn main() -> Result<(), io::Error> {
         .route("/image", post(Image::post).delete(Image::delete))
         .route("/image/{id}", get(Image::get))
         .nest_service("/static", static_dir)
-        .route("/{*wildcard}", get(|| async { Page::error("404") }))
+        .route(
+            "/{*wildcard}",
+            get(|| async { Page::error(StatusCode::NOT_FOUND, "404") }),
+        )
         .layer(sess_mw)
         .layer(DefaultBodyLimit::max(10_485_760))
         .layer(TraceLayer::new_for_http());
