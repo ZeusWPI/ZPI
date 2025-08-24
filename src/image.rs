@@ -125,11 +125,11 @@ impl DataImage {
             "-filter",
             "Robidoux",
             "-resize",
-            resize_arg.as_str(),
+            &resize_arg,
             "-gravity",
             "center",
             "-crop",
-            crop_arg.as_str(),
+            &crop_arg,
             "+repage",
             sized_path
                 .to_str()
@@ -137,24 +137,31 @@ impl DataImage {
         ];
 
         tracing::debug!(
-            "running command {} with args {:?}",
+            "running command '{}' with args {:?}",
             MAGICK_PATH.as_str(),
             args
         );
 
-        let output = Command::new(MAGICK_PATH.as_str())
-            .args(args)
-            .output()
-            .await?;
+        // check if command was found
+        let output = match Command::new(MAGICK_PATH.as_str()).args(args).output().await {
+            Ok(output) => Ok(output),
+            Err(e) if e.kind() == ErrorKind::NotFound => Err(AppError::Magick(format!(
+                "command not found '{}'. install ImageMagick or set MAGICK_PATH.",
+                MAGICK_PATH.as_str()
+            ))),
+            Err(e) => Err(e)?,
+        }?;
 
         tracing::debug!("command ran with status code {}", output.status);
-        // if magick was not success
+        // if magick was not successful
         if !output.status.success() {
-            return Err(AppError::Magick(
-                str::from_utf8(&output.stderr)
-                    .or(Err(AppError::Internal("utf8".into())))?
-                    .to_string(),
-            ));
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            let stderr = String::from_utf8_lossy(&output.stderr);
+
+            return Err(AppError::Magick(format!(
+                "ImageMagick failed with status: {}\nstderr: {}\nstdout: {}",
+                output.status, stderr, stdout
+            )));
         }
 
         Ok(())

@@ -112,13 +112,13 @@ pub async fn get_image(
 ) -> Result<Response, AppError> {
     // default size
     let requested_size = params.size.unwrap_or(256);
-    // get closest size that is bigger, or largest
+    // get closest size that is bigger, or largest if none are bigger
     let size = *SIZES
         .iter()
         .filter(|x| **x > requested_size)
         .min()
         .unwrap_or(SIZES.iter().max().unwrap());
-    dbg!(size);
+
     let profile = ProfileImage::new(user_id);
     let etag_opt = file_modified_etag(&profile.path(size)).await?;
 
