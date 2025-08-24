@@ -183,6 +183,7 @@ impl IntoResponse for ResponseImage {
 }
 
 fn make_placeholder(user_id: u32) -> Vec<u8> {
+    // svg made by @flynn
     let mut rand_gen = SmallRng::seed_from_u64(user_id as u64);
     let polygon_points = "9.0,0.0 4.5,7.794 -4.5,7.794 -9.0,0 -4.5,-7.794 4.5,-7.794";
 
@@ -253,9 +254,7 @@ fn make_placeholder(user_id: u32) -> Vec<u8> {
         .set("fill", "#EEE");
 
     let document = Document::new()
-        .set("width", 64)
-        .set("height", 64)
-        .set("fill", "#ff7f00")
+        .set("viewBox", "0 0 64 64")
         .set("xmlns:xlink", "http://www.w3.org/1999/xlink")
         .set("id", "flynn")
         .add(background)
