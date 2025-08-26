@@ -46,7 +46,12 @@ async fn main() -> Result<(), io::Error> {
         .route("/image", post(Image::post).delete(Image::delete))
         .route("/image/{id}", get(Image::get))
         .nest_service("/static", static_dir)
-        .fallback(get(|| async { Page::error(StatusCode::NOT_FOUND, "404") }))
+        .fallback(get(|| async {
+            (
+                StatusCode::NOT_FOUND,
+                Page::error(StatusCode::NOT_FOUND, "404"),
+            )
+        }))
         .layer(sess_mw)
         .layer(DefaultBodyLimit::max(10_485_760))
         .layer(CompressionLayer::new())
