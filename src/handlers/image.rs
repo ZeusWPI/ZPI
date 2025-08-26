@@ -64,7 +64,7 @@ impl Image {
         mut multipart: Multipart,
     ) -> Result<Redirect, AppError> {
         while let Some(field) = multipart.next_field().await? {
-            if let Some("image_file") = field.name() {
+            if let Some("image-file") = field.name() {
                 let data = field.bytes().await?;
 
                 ProfileImage::new(user.id)
