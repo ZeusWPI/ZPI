@@ -65,15 +65,8 @@
         for (var i = 0, len = inputs.length; i < len; i++) {
             inputs[i].onchange = readURL;
         }
-
         function resetImage() {
-            fetch("/image", {
-                method: "DELETE",
-                body: JSON.stringify({}),
-                headers: {
-                    "Content-type": "application/json; charset=UTF-8",
-                },
-            }).then(() => location.reload());
+            fetch("/image", { method: "DELETE" }).then(() => location.reload());
         }
     </script>
 </html>
