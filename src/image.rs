@@ -11,16 +11,16 @@ use axum::{
     response::{IntoResponse, Response},
 };
 
-use rand::{Rng, SeedableRng, rngs::SmallRng, seq::IndexedRandom};
+use rand::{SeedableRng, rngs::SmallRng, seq::IndexedRandom};
 use reqwest::header::CONTENT_TYPE;
 use svg::{
     Document,
-    node::element::{Definitions, Group, Mask, Polygon, Polyline, Rectangle, Use, tag::Rectangle},
+    node::element::{Definitions, Group, Mask, Polygon, Polyline, Rectangle, Use},
 };
 use tokio::{fs::File, process::Command, task::JoinSet};
 use tokio_util::io::ReaderStream;
 
-use crate::{PLACEHOLDER, error::AppError, format::SupportedFormat};
+use crate::{error::AppError, format::SupportedFormat};
 
 static IMAGE_PATH: LazyLock<String> =
     LazyLock::new(|| env::var("IMAGE_PATH").expect("IMAGE_PATH not present"));
@@ -50,6 +50,10 @@ impl ProfileImage {
     }
 
     pub async fn with_data(self, data: &[u8]) -> Result<DataImage, AppError> {
+        if data.is_empty() {
+            return Err(AppError::NoFile);
+        }
+
         // save original
         tracing::debug!(
             "saving original image on {} with data length {}",
@@ -125,11 +129,11 @@ impl DataImage {
             "-filter",
             "Robidoux",
             "-resize",
-            resize_arg.as_str(),
+            &resize_arg,
             "-gravity",
             "center",
             "-crop",
-            crop_arg.as_str(),
+            &crop_arg,
             "+repage",
             sized_path
                 .to_str()
@@ -137,24 +141,31 @@ impl DataImage {
         ];
 
         tracing::debug!(
-            "running command {} with args {:?}",
+            "running command '{}' with args {:?}",
             MAGICK_PATH.as_str(),
             args
         );
 
-        let output = Command::new(MAGICK_PATH.as_str())
-            .args(args)
-            .output()
-            .await?;
+        // check if command was found
+        let output = match Command::new(MAGICK_PATH.as_str()).args(args).output().await {
+            Ok(output) => Ok(output),
+            Err(e) if e.kind() == ErrorKind::NotFound => Err(AppError::Magick(format!(
+                "command not found '{}'. install ImageMagick or set MAGICK_PATH.",
+                MAGICK_PATH.as_str()
+            ))),
+            Err(e) => Err(e)?,
+        }?;
 
         tracing::debug!("command ran with status code {}", output.status);
-        // if magick was not success
+        // if magick was not successful
         if !output.status.success() {
-            return Err(AppError::Magick(
-                str::from_utf8(&output.stderr)
-                    .or(Err(AppError::Internal("utf8".into())))?
-                    .to_string(),
-            ));
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            let stderr = String::from_utf8_lossy(&output.stderr);
+
+            return Err(AppError::Magick(format!(
+                "ImageMagick failed with status: {}\nstderr: {}\nstdout: {}",
+                output.status, stderr, stdout
+            )));
         }
 
         Ok(())
@@ -183,6 +194,7 @@ impl IntoResponse for ResponseImage {
 }
 
 fn make_placeholder(user_id: u32) -> Vec<u8> {
+    // svg made by @flynn
     let mut rand_gen = SmallRng::seed_from_u64(user_id as u64);
     let polygon_points = "9.0,0.0 4.5,7.794 -4.5,7.794 -9.0,0 -4.5,-7.794 4.5,-7.794";
 
@@ -253,9 +265,7 @@ fn make_placeholder(user_id: u32) -> Vec<u8> {
         .set("fill", "#EEE");
 
     let document = Document::new()
-        .set("width", 64)
-        .set("height", 64)
-        .set("fill", "#ff7f00")
+        .set("viewBox", "0 0 64 64")
         .set("xmlns:xlink", "http://www.w3.org/1999/xlink")
         .set("id", "flynn")
         .add(background)

@@ -1,73 +1,97 @@
 <!doctype html>
 <html>
-<body>
-<div id="card">
-    <div>Ono! An error!</div>
-    <div id="error-msg">{{error_message}}</div>
-    <a href="/">Go Back</a>
-</div>
-</body>
-<style>
+    <body>
+        <div id="card">
+            <div>Ono! An error!</div>
+            <div id="error-msg">{{error_message}}</div>
+            <a href="/">Go Back</a>
+        </div>
+    </body>
+    <style>
+        <body>
+            <div class="card">
+                <div>Ono! An error!</div>
+                <div>{{status_code}}</div>
+                <div style="font-size: 1rem">{{error_message}}</div>
+                <a href="/">Go Back</a>
+            </div>
+        </body>
+        <style>
+            body,
+            html {
+                margin: 0;
+            }
+            body {
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                align-items: center;
+                height: 100vh;
+                color: white;
+                font-size: 3rem;
+                background-color: #121212;
+                font-family: sans-serif;
+            }
 
-    * {
-        --background-color: #fff;
-        --alt-background-color: #eee;
-        --text-color: #000;
-        --alt-text-color: #ccc;
-        --primary-color: #ff7f00;
-        --secondary-color: #f9c898;
-    }
-
-    @media (prefers-color-scheme: dark) {
         * {
-            --background-color: #222;
-            --alt-background-color: #555;
-            --text-color: #fff;
-            --alt-text-color: #444;
-            --secondary-color: #ffb36d;
+            --background-color: #fff;
+            --alt-background-color: #eee;
+            --text-color: #000;
+            --alt-text-color: #ccc;
+            --primary-color: #ff7f00;
+            --secondary-color: #f9c898;
         }
-    }
 
-    body,
-    html {
-        margin: 0;
-    }
+        @media (prefers-color-scheme: dark) {
+            * {
+                --background-color: #222;
+                --alt-background-color: #555;
+                --text-color: #fff;
+                --alt-text-color: #444;
+                --secondary-color: #ffb36d;
+            }
+        }
 
-    body {
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        height: 100vh;
-        color: var(--text-color);
-        font-size: 8vmin;
-        background-color: var(--background-color);
-        font-family: sans-serif;
-    }
+        body,
+        html {
+            margin: 0;
+        }
 
-    #card {
-        margin-top: 1rem;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        background-color: var(--alt-background-color);
-        padding: 6vmin;
-        border-radius: 4vmin;
-        max-width: 100vw;
-    }
+        body {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            color: var(--text-color);
+            font-size: 8vmin;
+            background-color: var(--background-color);
+            font-family: sans-serif;
+        }
 
-    #error-msg {
-        font-size: 4vmin;
-    }
+        #card {
+            margin-top: 1rem;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: var(--alt-background-color);
+            padding: 6vmin;
+            border-radius: 4vmin;
+            max-width: 100vw;
+        }
 
-    a {
-        margin-top: 2rem;
-        padding: 2rem;
-        background-color: var(--primary-color);
-        border-radius: 1rem;
-        font-size: 5vmin;
-        color: white;
-        text-decoration: none;
-    }
-</style>
+        #error-msg {
+            font-size: 4vmin;
+        }
+
+        a {
+            margin-top: 2rem;
+            padding: 2rem;
+            background-color: var(--primary-color);
+            border-radius: 1rem;
+            font-size: 5vmin;
+            color: white;
+            text-decoration: none;
+        }
+    </style>
 </html>

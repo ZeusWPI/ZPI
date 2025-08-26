@@ -1,6 +1,6 @@
 [package]
 name = "zpi"
-version = "1.2.0"
+version = "1.2.3"
 edition = "2024"
 
 [dependencies]
@@ -18,8 +18,13 @@ serde = { version = "1.0.219", features = ["derive"] }
 serde_json = "1.0.142"
 tokio = { version = "1.47.1", features = ["full"] }
 tokio-util = { version = "0.7.16", features = ["io"] }
-tower-http = { version = "0.6.6", features = ["trace", "fs"] }
+tower-http = { version = "0.6.6", features = [
+    "trace",
+    "fs",
+    "compression-zstd",
+] }
 tower-sessions = "0.14.0"
 tracing = "=0.1"
-tracing-subscriber = "=0.3"
+tracing-subscriber = { version = "=0.3", features = ["env-filter"] }
 svg = "0.18.0"
+thiserror = "2.0.16"

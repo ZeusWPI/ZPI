@@ -1,4 +1,5 @@
 use axum::response::Html;
+use reqwest::StatusCode;
 
 static LOGIN_HTML: &str = include_str!("../templates/login.html");
 static UPLOAD_HTML: &str = include_str!("../templates/upload.html");
@@ -19,7 +20,11 @@ impl Page {
         Html(LOGIN_HTML.to_string())
     }
 
-    pub fn error(msg: &str) -> Html<String> {
-        Html(ERROR_HTML.replace("{{error_message}}", msg))
+    pub fn error(status_code: StatusCode, msg: &str) -> Html<String> {
+        Html(
+            ERROR_HTML
+                .replace("{{error_message}}", msg)
+                .replace("{{status_code}}", &status_code.as_u16().to_string()),
+        )
     }
 }
