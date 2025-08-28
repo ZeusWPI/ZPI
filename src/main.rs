@@ -21,12 +21,15 @@ use crate::{
         image::Image,
     },
     image::IMAGE_PATH,
+    models::user::User,
 };
 
+mod db;
 mod error;
 mod format;
 mod handlers;
 mod image;
+mod models;
 mod pages;
 
 #[tokio::main]
