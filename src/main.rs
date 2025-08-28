@@ -21,7 +21,6 @@ use crate::{
         image::Image,
     },
     image::IMAGE_PATH,
-    models::user::User,
 };
 
 mod db;
@@ -66,7 +65,8 @@ async fn main() -> Result<(), io::Error> {
         .layer(sess_mw)
         .layer(DefaultBodyLimit::max(10_485_760))
         .layer(CompressionLayer::new())
-        .layer(TraceLayer::new_for_http());
+        .layer(TraceLayer::new_for_http())
+        .with_state(db::create_conn().await);
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await?;
     axum::serve(listener, app)

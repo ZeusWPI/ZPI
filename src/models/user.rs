@@ -3,6 +3,7 @@ use sqlx::{FromRow, SqlitePool};
 use crate::handlers::auth::ZauthUser;
 
 #[derive(Debug, FromRow)]
+#[derive(serde::Serialize)]
 pub struct User {
     pub id: u32,
     pub username: String,

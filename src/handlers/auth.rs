@@ -8,7 +8,7 @@ use rand::distr::{Alphanumeric, SampleString};
 use serde::{Deserialize, Serialize};
 use tower_sessions::Session;
 
-use crate::error::AppError;
+use crate::{error::AppError, models::user::User};
 
 static ZAUTH_URL: LazyLock<String> =
     LazyLock::new(|| env::var("ZAUTH_URL").expect("ZAUTH_URL not present"));
@@ -86,8 +86,11 @@ impl Auth {
             .json::<ZauthUser>()
             .await?;
 
+        let user = User::from(zauth_user);
+        user.create();
+
         session.clear().await;
-        session.insert("user", zauth_user).await?;
+        session.insert("user", user).await?;
         Ok(Redirect::to("/"))
     }
 }
