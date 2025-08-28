@@ -1,4 +1,4 @@
-use std::{env, sync::LazyLock};
+use std::{env, path::Path, sync::LazyLock};
 
 use axum::{
     Router,
@@ -9,14 +9,20 @@ use axum::{
 use error::AppError;
 use pages::Page;
 use reqwest::StatusCode;
-use tokio::io::{self};
+use tokio::{
+    fs,
+    io::{self},
+};
 use tower_http::{compression::CompressionLayer, services::ServeDir, trace::TraceLayer};
 use tower_sessions::{MemoryStore, Session, SessionManagerLayer, cookie::SameSite};
 use tracing_subscriber::{EnvFilter, fmt, prelude::*};
 
-use crate::handlers::{
-    auth::{Auth, ZauthUser},
-    image::Image,
+use crate::{
+    handlers::{
+        auth::{Auth, ZauthUser},
+        image::Image,
+    },
+    image::IMAGE_PATH,
 };
 
 mod error;
@@ -28,6 +34,10 @@ mod pages;
 #[tokio::main]
 async fn main() -> Result<(), io::Error> {
     let _ = dotenvy::dotenv();
+
+    if !IMAGE_PATH.exists() {
+        fs::create_dir_all(image::IMAGE_PATH.as_path()).await?;
+    }
 
     tracing_subscriber::registry()
         .with(fmt::layer())

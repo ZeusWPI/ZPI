@@ -22,7 +22,7 @@ use tokio_util::io::ReaderStream;
 
 use crate::{error::AppError, format::SupportedFormat};
 
-static IMAGE_PATH: LazyLock<PathBuf> =
+pub static IMAGE_PATH: LazyLock<PathBuf> =
     LazyLock::new(|| PathBuf::from(env::var("IMAGE_PATH").expect("IMAGE_PATH not present")));
 
 static MAGICK_PATH: LazyLock<String> =
