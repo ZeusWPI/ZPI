@@ -1,5 +1,7 @@
 use sqlx::{FromRow, SqlitePool};
 
+use crate::handlers::auth::ZauthUser;
+
 #[derive(Debug, FromRow)]
 pub struct User {
     pub id: u32,
@@ -26,5 +28,11 @@ impl User {
             .execute(db)
             .await
             .expect("insert failed");
+    }
+}
+
+impl From<ZauthUser> for User {
+    fn from(value: ZauthUser) -> Self {
+        Self::new(value.id, value.username)
     }
 }
