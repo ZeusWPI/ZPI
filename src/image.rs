@@ -22,8 +22,8 @@ use tokio_util::io::ReaderStream;
 
 use crate::{error::AppError, format::SupportedFormat};
 
-static IMAGE_PATH: LazyLock<String> =
-    LazyLock::new(|| env::var("IMAGE_PATH").expect("IMAGE_PATH not present"));
+pub static IMAGE_PATH: LazyLock<PathBuf> =
+    LazyLock::new(|| PathBuf::from(env::var("IMAGE_PATH").expect("IMAGE_PATH not present")));
 
 static MAGICK_PATH: LazyLock<String> =
     LazyLock::new(|| env::var("MAGICK_PATH").expect("MAGICK_PATH not present"));
@@ -85,12 +85,12 @@ impl ProfileImage {
     }
 
     pub fn path_orig(&self) -> PathBuf {
-        PathBuf::from(IMAGE_PATH.to_string()).join(self.user_id.to_string())
+        IMAGE_PATH.join(self.user_id.to_string())
     }
 
     pub fn path(&self, size: u32) -> PathBuf {
         let filename = format!("{}.{}.{}", self.user_id, size, IMAGE_SAVE_TYPE.extension());
-        PathBuf::from(IMAGE_PATH.to_string()).join(filename)
+        IMAGE_PATH.join(filename)
     }
 }
 
