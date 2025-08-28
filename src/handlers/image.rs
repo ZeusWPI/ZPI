@@ -44,8 +44,8 @@ impl Image {
 
         // get image (or placeholder, if requested) from disk
         let mut resp = match params.placeholder {
-            Some(true) => profile.get_with_placeholder(size).await,
-            _ => profile.get(size).await,
+            Some(false) => profile.get(size).await,
+            _ => profile.get_with_placeholder(size).await,
         }?
         .into_response();
 
