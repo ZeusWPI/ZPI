@@ -1,17 +1,16 @@
+use sqlx::SqlitePool;
 use sqlx::sqlite::SqlitePoolOptions;
-use sqlx::{FromRow, SqlitePool};
 use std::env;
 use std::sync::LazyLock;
 
-static DB_LOCATION: LazyLock<String> =
-    LazyLock::new(|| env::var("DB_LOCATION").expect("DB_LOCATION not present"));
+static DATABASE_URL: LazyLock<String> =
+    LazyLock::new(|| env::var("DATABASE_URL").expect("DATABASE_URL not present"));
 
 pub async fn create_conn() -> SqlitePool {
-    dbg!(DB_LOCATION.as_str());
+    dbg!(DATABASE_URL.as_str());
     SqlitePoolOptions::new()
         .max_connections(5)
-        .connect(&format!("sqlite://{}", DB_LOCATION.as_str()))
+        .connect(&DATABASE_URL)
         .await
         .unwrap()
 }
-
