@@ -14,13 +14,13 @@
 	<div class="flex flex-row items-center gap-2">
 		<Tooltip text="Backend Version">
 			<div class="flex flex-row items-center">
-				<img class="size-4" src={rustIcon} alt="Rust" />
+				<img class="size-4 mx-0.5" src={rustIcon} alt="Rust" />
 				v{backend_version}
 			</div>
 		</Tooltip>
 		<Tooltip text="Frontend Version">
 			<div class="flex flex-row items-center">
-				<img class="size-4" src={svelteIcon} alt="Svelte" />
+				<img class="size-4 mx-0.5" src={svelteIcon} alt="Svelte" />
 				v{frontend_version}
 			</div>
 		</Tooltip>
