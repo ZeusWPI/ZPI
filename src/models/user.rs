@@ -2,8 +2,7 @@ use sqlx::{FromRow, SqlitePool};
 
 use crate::handlers::auth::ZauthUser;
 
-#[derive(Debug, FromRow)]
-#[derive(serde::Serialize)]
+#[derive(Debug, FromRow, serde::Serialize)]
 pub struct User {
     pub id: u32,
     pub username: String,
@@ -23,12 +22,18 @@ impl User {
     }
 
     pub async fn create(&self, db: &SqlitePool) {
-        sqlx::query("INSERT INTO user (id, username) VALUES (?, ?);")
-            .bind(self.id)
-            .bind(&self.username)
-            .execute(db)
-            .await
-            .expect("insert failed");
+        sqlx::query(
+            " 
+            INSERT INTO user (id, username) VALUES (?, ?)
+            ON CONFLICT(id) DO UPDATE SET username = ?;
+            ",
+        )
+        .bind(self.id)
+        .bind(&self.username)
+        .bind(&self.username)
+        .execute(db)
+        .await
+        .expect("insert failed");
     }
 }
 
