@@ -1,11 +1,12 @@
 use std::{env, sync::LazyLock};
 
 use axum::{
-    extract::Query,
+    extract::{Query, State},
     response::{IntoResponse, Redirect},
 };
 use rand::distr::{Alphanumeric, SampleString};
 use serde::{Deserialize, Serialize};
+use sqlx::SqlitePool;
 use tower_sessions::Session;
 
 use crate::{error::AppError, models::user::User};
@@ -43,6 +44,7 @@ impl Auth {
     pub async fn callback(
         Query(params): Query<Callback>,
         session: Session,
+        State(db): State<SqlitePool>,
     ) -> Result<Redirect, AppError> {
         let zauth_state = match session.get::<String>("state").await? {
             None => return Ok(Redirect::to("/login")),
@@ -87,7 +89,7 @@ impl Auth {
             .await?;
 
         let user = User::from(zauth_user);
-        user.create();
+        user.create(&db).await;
 
         session.clear().await;
         session.insert("user", user).await?;
