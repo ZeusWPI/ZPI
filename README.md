@@ -21,7 +21,7 @@ You can give any optional query parameters to change which reply you receive:
 
 | query param | value                        | explanation                                 | default |
 | ----------- | ---------------------------- | ------------------------------------------- | ------- |
-| placeholder | `true` / `false`             | return a placeholder when user has no image | `false` |
+| placeholder | `true` / `false`             | return a placeholder when user has no image | `true`  |
 | size        | `64` / `128` / `256` / `512` | square resolution of the image              | `256`   |
 
 > [!NOTE]
