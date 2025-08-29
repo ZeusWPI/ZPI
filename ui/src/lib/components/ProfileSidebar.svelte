@@ -10,6 +10,7 @@
 
 </script>
 <div class={`${$$props.class || ''}`}>
+	<hr class="w-48 h-0.5 mx-auto my-2 bg-gray-100 border-0 rounded-sm md:my-10 dark:bg-gray-700">
 	<span class="font-bold">About</span>
 	<br>
 	<p>{userDescription}</p>
