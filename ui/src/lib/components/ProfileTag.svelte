@@ -3,7 +3,7 @@
 </script>
 
 
-<span class="border-2 rounded-2xl p-1 px-3 mx-1" style="--color: {tag.color};">
+<span class="border-2 rounded-2xl px-3 mx-1 inline-block" style="--color: {tag.color};">
 	{tag.label}
 </span>
 

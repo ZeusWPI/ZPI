@@ -18,7 +18,8 @@
 			'properties': {
 				'quotes': [
 					'Wow Nathan Is Een Zeer Coole Jongen',
-					'Ik heb dat wel niet gezegd eh.'
+					'Ik heb dat wel niet gezegd eh.',
+					'Voor sommige mensen is links en rechts hetzelfde als boven en beneden.'
 				]
 			}
 		}
@@ -35,7 +36,7 @@
 </script>
 <div id="showcases">
 	{#each showcases as showcase}
-		<hr class="w-48 h-0.5 mx-auto my-2 bg-gray-100 border-0 rounded-sm md:my-10 dark:bg-gray-700">
+		<hr class="w-48 h-0.5 mx-auto my-2 bg-gray-100 border-0 rounded-sm md:w-5/6 md:my-8 dark:bg-gray-700">
 		<div class="showcase">
 			<svelte:component this={getComponent(showcase.type)} showcaseProperties={showcase.properties} />
 		</div>
