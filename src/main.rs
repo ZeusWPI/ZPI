@@ -7,6 +7,7 @@ use axum::{
 use error::AppError;
 use pages::Page;
 use reqwest::StatusCode;
+use sqlx::migrate::MigrateDatabase;
 use tokio::{
     fs,
     io::{self},
@@ -38,7 +39,11 @@ async fn main() -> Result<(), io::Error> {
     if !IMAGE_PATH.exists() {
         fs::create_dir_all(image::IMAGE_PATH.as_path()).await?;
     }
-    db::create_db().await;
+
+    // create db if it doesn't exist yet
+    sqlx::Sqlite::create_database(&db::DATABASE_URL)
+        .await
+        .expect("Unable to create db");
 
     tracing_subscriber::registry()
         .with(fmt::layer())
