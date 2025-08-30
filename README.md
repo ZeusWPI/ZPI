@@ -37,3 +37,7 @@ see [env example](./.env.example) for an example
 | `ZAUTH_CLIENT_ID` | zauth client id |
 | `ZAUTH_CLIENT_SECRET` | zauth client secret |
 | `IMAGE_PATH` | path where the profile images will be stored and retrieved |
+| `MAGICK_PATH` | path where the `magick` binary is located |
+| `DATABASE_URL` | path to the sqlite database file |
+| `LOG_LEVEL` | log level |
+
