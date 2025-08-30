@@ -88,6 +88,7 @@ impl Auth {
             .json::<ZauthUser>()
             .await?;
 
+        sqlx::migrate!().run(&db).await.expect("Error while running db migrations");
         let user = User::from(zauth_user);
         user.create(&db).await;
 
