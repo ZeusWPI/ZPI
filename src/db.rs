@@ -1,4 +1,5 @@
 use sqlx::SqlitePool;
+use sqlx::migrate::MigrateDatabase;
 use sqlx::sqlite::SqlitePoolOptions;
 use std::env;
 use std::sync::LazyLock;
@@ -13,4 +14,11 @@ pub async fn create_conn() -> SqlitePool {
         .connect(&DATABASE_URL)
         .await
         .unwrap()
+}
+
+/// create db if it doesn't exist yet
+pub async fn create_db() {
+    sqlx::Sqlite::create_database(&DATABASE_URL)
+        .await
+        .expect("Unable to create db");
 }
