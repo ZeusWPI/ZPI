@@ -3,6 +3,6 @@
 /images
 *.db
 *.sql
-.sql-wal
-.sql-shm
+*.sql-wal
+*.sql-shm
 !migrations/*.sql
