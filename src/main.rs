@@ -38,6 +38,7 @@ async fn main() -> Result<(), io::Error> {
     if !IMAGE_PATH.exists() {
         fs::create_dir_all(image::IMAGE_PATH.as_path()).await?;
     }
+    db::create_db().await;
 
     tracing_subscriber::registry()
         .with(fmt::layer())
