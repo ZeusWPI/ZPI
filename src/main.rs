@@ -1,5 +1,3 @@
-use std::{env, path::Path, sync::LazyLock};
-
 use axum::{
     Router,
     extract::DefaultBodyLimit,
@@ -9,6 +7,7 @@ use axum::{
 use error::AppError;
 use pages::Page;
 use reqwest::StatusCode;
+use sqlx::migrate::MigrateDatabase;
 use tokio::{
     fs,
     io::{self},
@@ -25,10 +24,12 @@ use crate::{
     image::IMAGE_PATH,
 };
 
+mod db;
 mod error;
 mod format;
 mod handlers;
 mod image;
+mod models;
 mod pages;
 
 #[tokio::main]
@@ -38,6 +39,11 @@ async fn main() -> Result<(), io::Error> {
     if !IMAGE_PATH.exists() {
         fs::create_dir_all(image::IMAGE_PATH.as_path()).await?;
     }
+
+    // create db if it doesn't exist yet
+    sqlx::Sqlite::create_database(&db::DATABASE_URL)
+        .await
+        .expect("Unable to create db");
 
     tracing_subscriber::registry()
         .with(fmt::layer())
@@ -65,7 +71,8 @@ async fn main() -> Result<(), io::Error> {
         .layer(sess_mw)
         .layer(DefaultBodyLimit::max(10_485_760))
         .layer(CompressionLayer::new())
-        .layer(TraceLayer::new_for_http());
+        .layer(TraceLayer::new_for_http())
+        .with_state(db::create_conn().await);
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await?;
     axum::serve(listener, app)

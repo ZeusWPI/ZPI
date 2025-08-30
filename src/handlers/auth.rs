@@ -1,14 +1,15 @@
 use std::{env, sync::LazyLock};
 
 use axum::{
-    extract::Query,
+    extract::{Query, State},
     response::{IntoResponse, Redirect},
 };
 use rand::distr::{Alphanumeric, SampleString};
 use serde::{Deserialize, Serialize};
+use sqlx::SqlitePool;
 use tower_sessions::Session;
 
-use crate::error::AppError;
+use crate::{error::AppError, models::user::User};
 
 static ZAUTH_URL: LazyLock<String> =
     LazyLock::new(|| env::var("ZAUTH_URL").expect("ZAUTH_URL not present"));
@@ -43,6 +44,7 @@ impl Auth {
     pub async fn callback(
         Query(params): Query<Callback>,
         session: Session,
+        State(db): State<SqlitePool>,
     ) -> Result<Redirect, AppError> {
         let zauth_state = match session.get::<String>("state").await? {
             None => return Ok(Redirect::to("/login")),
@@ -86,8 +88,12 @@ impl Auth {
             .json::<ZauthUser>()
             .await?;
 
+        sqlx::migrate!().run(&db).await.expect("Error while running db migrations");
+        let user = User::from(zauth_user);
+        user.create(&db).await;
+
         session.clear().await;
-        session.insert("user", zauth_user).await?;
+        session.insert("user", user).await?;
         Ok(Redirect::to("/"))
     }
 }
