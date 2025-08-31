@@ -56,21 +56,19 @@ impl Auth {
             return Err(AppError::Zauth("States don't match".into()));
         }
 
-        let callback_url = CALLBACK_URL.to_string();
         let client = reqwest::Client::new();
         let form = [
             ("grant_type", "authorization_code"),
             ("code", &params.code),
-            ("redirect_uri", &callback_url),
+            ("redirect_uri", &CALLBACK_URL),
         ];
 
-        let zauth_url = ZAUTH_URL.to_string();
         // get token from zauth with code
         let token = client
-            .post(format!("{zauth_url}/oauth/token"))
+            .post(format!("{}/oauth/token", ZAUTH_URL.as_str()))
             .basic_auth(
-                ZAUTH_CLIENT_ID.to_string(),
-                Some(ZAUTH_CLIENT_SECRET.to_string()),
+                ZAUTH_CLIENT_ID.as_str(),
+                Some(ZAUTH_CLIENT_SECRET.as_str()),
             )
             .form(&form)
             .send()
@@ -80,7 +78,7 @@ impl Auth {
 
         // get user info from zauth
         let zauth_user = client
-            .get(format!("{zauth_url}/current_user"))
+            .get(format!("{}/current_user", ZAUTH_URL.as_str()))
             .header("Authorization", "Bearer ".to_owned() + &token.access_token)
             .send()
             .await?
