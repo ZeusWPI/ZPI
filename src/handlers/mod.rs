@@ -1,15 +1,17 @@
 use axum::{extract::FromRequestParts, http::request::Parts};
+use serde::{Deserialize, Serialize};
 use tower_sessions::Session;
 
 use crate::{error::AppError, handlers::auth::ZauthUser};
 
 pub mod auth;
 pub mod image;
+pub mod user;
 
-#[allow(dead_code)]
+#[derive(Debug, Serialize, Deserialize)]
 pub struct AuthenticatedUser {
     id: u32,
-    name: String,
+    username: String,
 }
 
 impl<S> FromRequestParts<S> for AuthenticatedUser
@@ -32,7 +34,7 @@ impl From<ZauthUser> for AuthenticatedUser {
     fn from(user: ZauthUser) -> Self {
         Self {
             id: user.id,
-            name: user.username,
+            username: user.username,
         }
     }
 }
