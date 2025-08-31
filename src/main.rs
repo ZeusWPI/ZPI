@@ -60,7 +60,10 @@ async fn main() -> Result<(), io::Error> {
         .route("/login", get(AuthHandler::login))
         .route("/oauth/callback", get(AuthHandler::callback))
         .route("/logout", get(AuthHandler::logout))
-        .route("/image", post(ImageHandler::post).delete(ImageHandler::delete))
+        .route(
+            "/image",
+            post(ImageHandler::post).delete(ImageHandler::delete),
+        )
         .route("/image/{id}", get(ImageHandler::get))
         .route("/users/me", get(UserHandler::current_user))
         .nest_service("/static", static_dir)

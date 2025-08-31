@@ -66,10 +66,7 @@ impl AuthHandler {
         // get token from zauth with code
         let token = client
             .post(format!("{}/oauth/token", ZAUTH_URL.as_str()))
-            .basic_auth(
-                ZAUTH_CLIENT_ID.as_str(),
-                Some(ZAUTH_CLIENT_SECRET.as_str()),
-            )
+            .basic_auth(ZAUTH_CLIENT_ID.as_str(), Some(ZAUTH_CLIENT_SECRET.as_str()))
             .form(&form)
             .send()
             .await?
@@ -86,7 +83,10 @@ impl AuthHandler {
             .json::<ZauthUser>()
             .await?;
 
-        sqlx::migrate!().run(&db).await.expect("Error while running db migrations");
+        sqlx::migrate!()
+            .run(&db)
+            .await
+            .expect("Error while running db migrations");
         let user = User::from(zauth_user);
         user.create(&db).await;
 
