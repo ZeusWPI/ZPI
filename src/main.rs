@@ -1,3 +1,5 @@
+use std::error::Error;
+
 use axum::{Router, extract::DefaultBodyLimit, response::Html, routing::get};
 use error::AppError;
 use pages::Page;
@@ -7,7 +9,9 @@ use tokio::{
     fs,
     io::{self},
 };
-use tower_http::{compression::CompressionLayer, cors::CorsLayer, services::ServeDir, trace::TraceLayer};
+use tower_http::{
+    compression::CompressionLayer, cors::CorsLayer, services::ServeDir, trace::TraceLayer,
+};
 use tower_sessions::{MemoryStore, Session, SessionManagerLayer, cookie::SameSite};
 use tracing_subscriber::{EnvFilter, fmt, prelude::*};
 
@@ -29,7 +33,7 @@ mod models;
 mod pages;
 
 #[tokio::main]
-async fn main() -> Result<(), io::Error> {
+async fn main() -> Result<(), Box<dyn Error>> {
     let _ = dotenvy::dotenv();
 
     if !IMAGE_PATH.exists() {
@@ -37,9 +41,7 @@ async fn main() -> Result<(), io::Error> {
     }
 
     // create db if it doesn't exist yet
-    sqlx::Sqlite::create_database(&db::DATABASE_URL)
-        .await
-        .expect("Unable to create db");
+    sqlx::Sqlite::create_database(&db::DATABASE_URL).await?;
 
     tracing_subscriber::registry()
         .with(fmt::layer())
@@ -49,6 +51,9 @@ async fn main() -> Result<(), io::Error> {
     let sess_store = MemoryStore::default();
     let sess_mw = SessionManagerLayer::new(sess_store).with_same_site(SameSite::Lax);
     let static_dir = ServeDir::new("./static");
+
+    let db = db::create_conn().await;
+    sqlx::migrate!().run(&db).await?;
 
     let app = Router::new()
         .route("/", get(index))
@@ -67,7 +72,7 @@ async fn main() -> Result<(), io::Error> {
         .layer(CompressionLayer::new())
         .layer(TraceLayer::new_for_http())
         .layer(CorsLayer::permissive())
-        .with_state(db::create_conn().await);
+        .with_state(db);
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await?;
     axum::serve(listener, app)
