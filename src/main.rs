@@ -18,8 +18,8 @@ use tracing_subscriber::{EnvFilter, fmt, prelude::*};
 
 use crate::{
     handlers::{
-        auth::{Auth, ZauthUser},
-        image::Image,
+        auth::{AuthHandler, ZauthUser},
+        image::ImageHandler,
     },
     image::IMAGE_PATH,
 };
@@ -56,11 +56,11 @@ async fn main() -> Result<(), io::Error> {
 
     let app = Router::new()
         .route("/", get(index))
-        .route("/login", get(Auth::login))
-        .route("/oauth/callback", get(Auth::callback))
-        .route("/logout", get(Auth::logout))
-        .route("/image", post(Image::post).delete(Image::delete))
-        .route("/image/{id}", get(Image::get))
+        .route("/login", get(AuthHandler::login))
+        .route("/oauth/callback", get(AuthHandler::callback))
+        .route("/logout", get(AuthHandler::logout))
+        .route("/image", post(ImageHandler::post).delete(ImageHandler::delete))
+        .route("/image/{id}", get(ImageHandler::get))
         .nest_service("/static", static_dir)
         .fallback(get(|| async {
             (

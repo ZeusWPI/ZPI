@@ -17,9 +17,9 @@ use crate::{error::AppError, handlers::AuthenticatedUser, image::ProfileImage};
 
 static SIZES: &[u32] = &[64, 128, 256, 512];
 
-pub struct Image;
+pub struct ImageHandler;
 
-impl Image {
+impl ImageHandler {
     pub async fn get(
         Query(params): Query<GetImageQuery>,
         Path(user_id): Path<u32>,
