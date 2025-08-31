@@ -5,13 +5,16 @@ use std::{
 };
 
 use axum::{
+    Router,
     extract::{Multipart, Path, Query},
     response::{IntoResponse, Redirect, Response},
+    routing::{get, post},
 };
 use axum_extra::TypedHeader;
 use headers::{ETag, IfNoneMatch};
 use reqwest::{StatusCode, header::ETAG};
 use serde::Deserialize;
+use sqlx::SqlitePool;
 
 use crate::{error::AppError, handlers::AuthenticatedUser, image::ProfileImage};
 
@@ -20,6 +23,12 @@ static SIZES: &[u32] = &[64, 128, 256, 512];
 pub struct ImageHandler;
 
 impl ImageHandler {
+    pub fn router() -> Router<SqlitePool> {
+        Router::new()
+            .route("/", post(Self::post).delete(Self::delete))
+            .route("/{id}", get(Self::get))
+    }
+
     pub async fn get(
         Query(params): Query<GetImageQuery>,
         Path(user_id): Path<u32>,

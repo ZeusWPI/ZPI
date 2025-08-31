@@ -1,9 +1,4 @@
-use axum::{
-    Router,
-    extract::DefaultBodyLimit,
-    response::Html,
-    routing::{get, post},
-};
+use axum::{Router, extract::DefaultBodyLimit, response::Html, routing::get};
 use error::AppError;
 use pages::Page;
 use reqwest::StatusCode;
@@ -57,14 +52,8 @@ async fn main() -> Result<(), io::Error> {
 
     let app = Router::new()
         .route("/", get(index))
-        .route("/login", get(AuthHandler::login))
-        .route("/oauth/callback", get(AuthHandler::callback))
-        .route("/logout", get(AuthHandler::logout))
-        .route(
-            "/image",
-            post(ImageHandler::post).delete(ImageHandler::delete),
-        )
-        .route("/image/{id}", get(ImageHandler::get))
+        .merge(AuthHandler::router())
+        .nest("/image", ImageHandler::router())
         .nest("/users", UserHandler::router())
         .nest_service("/static", static_dir)
         .fallback(get(|| async {

@@ -1,5 +1,6 @@
-use axum::{extract::FromRequestParts, http::request::Parts};
+use axum::{Router, extract::FromRequestParts, http::request::Parts};
 use serde::{Deserialize, Serialize};
+use sqlx::SqlitePool;
 use tower_sessions::Session;
 
 use crate::{error::AppError, handlers::auth::ZauthUser};
@@ -7,6 +8,8 @@ use crate::{error::AppError, handlers::auth::ZauthUser};
 pub mod auth;
 pub mod image;
 pub mod user;
+
+type AppRouter = Router<SqlitePool>;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct AuthenticatedUser {
