@@ -20,9 +20,9 @@ static ZAUTH_CLIENT_ID: LazyLock<String> =
 static ZAUTH_CLIENT_SECRET: LazyLock<String> =
     LazyLock::new(|| env::var("ZAUTH_CLIENT_SECRET").expect("ZAUTH_CLIENT_SECRET not present"));
 
-pub struct Auth;
+pub struct AuthHandler;
 
-impl Auth {
+impl AuthHandler {
     pub async fn login(session: Session) -> Result<Redirect, AppError> {
         let state = Alphanumeric.sample_string(&mut rand::rng(), 16);
         // insert state so we can check it in the callback
