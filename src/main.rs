@@ -65,7 +65,7 @@ async fn main() -> Result<(), io::Error> {
             post(ImageHandler::post).delete(ImageHandler::delete),
         )
         .route("/image/{id}", get(ImageHandler::get))
-        .route("/users/me", get(UserHandler::current_user))
+        .nest("/users", UserHandler::router())
         .nest_service("/static", static_dir)
         .fallback(get(|| async {
             (
