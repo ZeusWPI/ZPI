@@ -20,6 +20,7 @@ use crate::{
     handlers::{
         auth::{AuthHandler, ZauthUser},
         image::ImageHandler,
+        user::UserHandler,
     },
     image::IMAGE_PATH,
 };
@@ -61,6 +62,7 @@ async fn main() -> Result<(), io::Error> {
         .route("/logout", get(AuthHandler::logout))
         .route("/image", post(ImageHandler::post).delete(ImageHandler::delete))
         .route("/image/{id}", get(ImageHandler::get))
+        .route("/users/me", get(UserHandler::current_user))
         .nest_service("/static", static_dir)
         .fallback(get(|| async {
             (
