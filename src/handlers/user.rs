@@ -1,4 +1,4 @@
-use axum::{routing::get, Json, Router};
+use axum::{Json, Router, routing::get};
 use sqlx::SqlitePool;
 
 use crate::{error::AppError, handlers::AuthenticatedUser};
@@ -10,10 +10,7 @@ impl UserHandler {
         Router::new().route("/me", get(Self::current_user))
     }
 
-    async fn current_user(
-        user: AuthenticatedUser,
-    ) -> Result<Json<AuthenticatedUser>, AppError> {
+    async fn current_user(user: AuthenticatedUser) -> Result<Json<AuthenticatedUser>, AppError> {
         Ok(Json(user))
     }
 }
- 

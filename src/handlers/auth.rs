@@ -1,15 +1,17 @@
 use std::{env, sync::LazyLock};
 
 use axum::{
+    Router,
     extract::{Query, State},
     response::{IntoResponse, Redirect},
+    routing::get,
 };
 use rand::distr::{Alphanumeric, SampleString};
 use serde::{Deserialize, Serialize};
 use sqlx::SqlitePool;
 use tower_sessions::Session;
 
-use crate::{error::AppError, models::user::User};
+use crate::{error::AppError, handlers::AppRouter, models::user::User};
 
 static ZAUTH_URL: LazyLock<String> =
     LazyLock::new(|| env::var("ZAUTH_URL").expect("ZAUTH_URL not present"));
@@ -23,7 +25,14 @@ static ZAUTH_CLIENT_SECRET: LazyLock<String> =
 pub struct AuthHandler;
 
 impl AuthHandler {
-    pub async fn login(session: Session) -> Result<Redirect, AppError> {
+    pub fn router() -> AppRouter {
+        Router::new()
+            .route("/login", get(Self::login))
+            .route("/oauth/callback", get(Self::callback))
+            .route("/logout", get(Self::logout))
+    }
+
+    async fn login(session: Session) -> Result<Redirect, AppError> {
         let state = Alphanumeric.sample_string(&mut rand::rng(), 16);
         // insert state so we can check it in the callback
         session.insert("state", state.clone()).await?;
@@ -36,12 +45,12 @@ impl AuthHandler {
         )))
     }
 
-    pub async fn logout(session: Session) -> impl IntoResponse {
+    async fn logout(session: Session) -> impl IntoResponse {
         session.clear().await;
         Redirect::to("/")
     }
 
-    pub async fn callback(
+    async fn callback(
         Query(params): Query<Callback>,
         session: Session,
         State(db): State<SqlitePool>,
