@@ -7,7 +7,7 @@ use tokio::{
     fs,
     io::{self},
 };
-use tower_http::{compression::CompressionLayer, services::ServeDir, trace::TraceLayer};
+use tower_http::{compression::CompressionLayer, cors::CorsLayer, services::ServeDir, trace::TraceLayer};
 use tower_sessions::{MemoryStore, Session, SessionManagerLayer, cookie::SameSite};
 use tracing_subscriber::{EnvFilter, fmt, prelude::*};
 
@@ -66,6 +66,7 @@ async fn main() -> Result<(), io::Error> {
         .layer(DefaultBodyLimit::max(10_485_760))
         .layer(CompressionLayer::new())
         .layer(TraceLayer::new_for_http())
+        .layer(CorsLayer::permissive())
         .with_state(db::create_conn().await);
 
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await?;
