@@ -2,7 +2,5 @@
 .env
 /images
 *.db
-*.sql
-*.sql-wal
-*.sql-shm
-!migrations/*.sql
+*.db-wal
+*.db-shm
