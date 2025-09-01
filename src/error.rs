@@ -59,7 +59,7 @@ impl IntoResponse for AppError {
         tracing::error!("{}", self);
 
         match self {
-            Self::NotLoggedIn => Redirect::to("/login").into_response(),
+            Self::NotLoggedIn => StatusCode::UNAUTHORIZED.into_response(),
             _ => self.error_page().into_response(),
         }
     }
