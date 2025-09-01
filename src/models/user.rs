@@ -1,8 +1,9 @@
+use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, SqlitePool};
 
 use crate::handlers::auth::ZauthUser;
 
-#[derive(Debug, FromRow, serde::Serialize)]
+#[derive(Debug, FromRow, Serialize, Deserialize, PartialEq)]
 pub struct User {
     pub id: u32,
     pub username: String,
@@ -23,7 +24,7 @@ impl User {
 
     pub async fn create(&self, db: &SqlitePool) {
         sqlx::query(
-            " 
+            "
             INSERT INTO user (id, username) VALUES (?, ?)
             ON CONFLICT(id) DO UPDATE SET username = ?;
             ",
