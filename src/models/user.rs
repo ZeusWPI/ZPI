@@ -7,15 +7,20 @@ use crate::handlers::auth::ZauthUser;
 pub struct User {
     pub id: u32,
     pub username: String,
+    pub about: String,
 }
 
 impl User {
-    pub fn new(id: u32, username: String) -> Self {
-        User { id, username }
+    pub fn new(id: u32, username: String, about: String) -> Self {
+        User {
+            id,
+            username,
+            about,
+        }
     }
 
     pub async fn get_single(db: &SqlitePool, id: u32) -> Self {
-        sqlx::query_as("SELECT id, username FROM user WHERE id == ? LIMIT 1;")
+        sqlx::query_as("SELECT id, username, about FROM user WHERE id == ? LIMIT 1;")
             .bind(id)
             .fetch_one(db)
             .await
@@ -25,12 +30,13 @@ impl User {
     pub async fn create(&self, db: &SqlitePool) {
         sqlx::query(
             "
-            INSERT INTO user (id, username) VALUES (?, ?)
+            INSERT INTO user (id, username, about) VALUES (?, ?, ?)
             ON CONFLICT(id) DO UPDATE SET username = ?;
             ",
         )
         .bind(self.id)
         .bind(&self.username)
+        .bind(&self.about)
         .bind(&self.username)
         .execute(db)
         .await
@@ -40,6 +46,6 @@ impl User {
 
 impl From<ZauthUser> for User {
     fn from(value: ZauthUser) -> Self {
-        Self::new(value.id, value.username)
+        Self::new(value.id, value.username, String::new())
     }
 }
