@@ -28,6 +28,7 @@ impl AuthenticatedRouter {
                     User {
                         id: 1,
                         username: "cheese".to_string(),
+                        about: "Just a test user, doing its job... and fantasizing about a life outside the test environment.".to_string(),
                     },
                 )
                 .await

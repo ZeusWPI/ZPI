@@ -22,7 +22,8 @@ async fn me(db_pool: SqlitePool) {
         user_response,
         User {
             id: 1,
-            username: "cheese".into()
+            username: "cheese".into(),
+            about: "Just a test user, doing its job... and fantasizing about a life outside the test environment.".to_string(),
         }
     );
 }
