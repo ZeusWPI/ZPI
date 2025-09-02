@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { page } from '$app/state';
 	import Profile from '$lib/components/profile-components/Profile.svelte';
 	import { createQuery } from '@tanstack/svelte-query';
 	import type { CreateQueryResult } from '@tanstack/svelte-query';
@@ -9,6 +10,8 @@
 		id: number,
 		username: string
 	}
+
+	let username = page.params.username;
 
 	let query: CreateQueryResult<CurrentUser>;
 
@@ -26,15 +29,16 @@
 			}
 		}
 	);
+
+
 </script>
 {#if $query.isSuccess}
 
 	<div class="flex flex-col min-h-screen">
 		<Navbar username={$query.data.username} />
 
-		<Profile username="caturn" />
+		<Profile {username} />
 
-		<div class="grow"></div>
 		<div class="flex flex-row justify-center mt-5 mb-3">
 			<div class="w-5/6">
 				<Footer />
