@@ -19,10 +19,15 @@ impl UserHandler {
     }
 
     async fn profile(
-        Path(user_id): Path<u32>,
+        Path(user_id_or_name): Path<String>,
         State(db): State<SqlitePool>,
     ) -> Result<Json<UserProfilePayload>, AppError> {
-        Ok(Json(UserProfilePayload::get_by_id(&db, user_id).await?))
+        match user_id_or_name.parse::<u32>() {
+            Ok(id) => Ok(Json(UserProfilePayload::get_by_id(&db, id).await?)),
+            Err(_) => Ok(Json(
+                UserProfilePayload::get_by_username(&db, user_id_or_name).await?,
+            )),
+        }
     }
 
     async fn patch(

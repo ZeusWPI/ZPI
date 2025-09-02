@@ -23,10 +23,19 @@ impl User {
         }
     }
 
-    pub async fn get_single(db: &SqlitePool, id: u32) -> Result<Self, AppError> {
+    pub async fn get_by_id(db: &SqlitePool, id: u32) -> Result<Self, AppError> {
         Ok(
             sqlx::query_as("SELECT id, username, about FROM user WHERE id == ? LIMIT 1;")
                 .bind(id)
+                .fetch_one(db)
+                .await?,
+        )
+    }
+
+    pub async fn get_by_username(db: &SqlitePool, username: String) -> Result<Self, AppError> {
+        Ok(
+            sqlx::query_as("SELECT id, username, about FROM user WHERE username == ? LIMIT 1;")
+                .bind(username)
                 .fetch_one(db)
                 .await?,
         )
@@ -89,8 +98,20 @@ pub struct UserProfilePayload {
 
 impl UserProfilePayload {
     pub async fn get_by_id(db: &SqlitePool, id: u32) -> Result<Self, AppError> {
-        let user = dbg!(User::get_single(db, id).await)?;
+        let user = dbg!(User::get_by_id(db, id).await)?;
         let tags = dbg!(Tag::for_user(db, id).await)?;
+
+        Ok(UserProfilePayload {
+            id: user.id,
+            username: user.username,
+            about: user.about,
+            tags,
+        })
+    }
+
+    pub async fn get_by_username(db: &SqlitePool, username: String) -> Result<Self, AppError> {
+        let user = dbg!(User::get_by_username(db, username).await)?;
+        let tags = dbg!(Tag::for_user(db, user.id).await)?;
 
         Ok(UserProfilePayload {
             id: user.id,
