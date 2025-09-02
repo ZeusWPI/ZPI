@@ -1,7 +1,11 @@
-use crate::error::AppError;
-use crate::handlers::{AuthenticatedUser, auth::ZauthUser};
 use serde::{Deserialize, Serialize};
-use sqlx::{FromRow, SqlitePool};
+use sqlx::{Decode, FromRow, SqlitePool};
+
+use crate::{
+    error::AppError,
+    handlers::{AuthenticatedUser, auth::ZauthUser},
+    models::tag::Tag,
+};
 
 #[derive(Debug, FromRow, Serialize, Deserialize, PartialEq)]
 pub struct User {
@@ -72,5 +76,27 @@ impl UserPatchPayload {
         .bind(user.id)
         .fetch_optional(db)
         .await?)
+    }
+}
+
+#[derive(Debug, FromRow, Decode, Serialize, Deserialize, PartialEq)]
+pub struct UserProfilePayload {
+    pub id: u32,
+    pub username: String,
+    pub about: String,
+    pub tags: Vec<Tag>,
+}
+
+impl UserProfilePayload {
+    pub async fn get_by_id(db: &SqlitePool, id: u32) -> Result<Self, AppError> {
+        let user = dbg!(User::get_single(db, id).await)?;
+        let tags = dbg!(Tag::for_user(db, id).await)?;
+
+        Ok(UserProfilePayload {
+            id: user.id,
+            username: user.username,
+            about: user.about,
+            tags,
+        })
     }
 }
