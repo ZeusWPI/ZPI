@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, SqlitePool};
 
-use crate::handlers::{auth::ZauthUser, AuthenticatedUser};
+use crate::handlers::{AuthenticatedUser, auth::ZauthUser};
 
 #[derive(Debug, FromRow, Serialize, Deserialize, PartialEq)]
 pub struct User {
@@ -52,7 +52,7 @@ impl From<ZauthUser> for User {
 
 #[derive(Serialize, Deserialize)]
 pub struct UserPatchPayload {
-    pub about: String
+    pub about: String,
 }
 
 impl UserPatchPayload {

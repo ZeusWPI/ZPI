@@ -1,7 +1,10 @@
 use std::sync::Arc;
 
 use axum::{
-    body::Body, debug_handler, http::{Request, Response}, response::IntoResponse, Json, Router
+    Json, Router,
+    body::Body,
+    http::{Request, Response},
+    response::IntoResponse,
 };
 use reqwest::header;
 use sqlx::SqlitePool;
