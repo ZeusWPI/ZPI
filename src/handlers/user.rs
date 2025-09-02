@@ -14,11 +14,8 @@ impl UserHandler {
             .route("/{id}", get(Self::user_with_id))
     }
 
-    async fn current_user(
-        user: AuthenticatedUser,
-        State(db): State<SqlitePool>,
-    ) -> Result<Json<User>, AppError> {
-        Ok(Json(User::get_single(&db, user.id).await))
+    async fn current_user(user: AuthenticatedUser) -> Result<Json<AuthenticatedUser>, AppError> {
+        Ok(Json(user))
     }
 
     async fn user_with_id(
