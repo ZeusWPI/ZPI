@@ -70,7 +70,7 @@ impl ProfileImage {
         let file = tokio::fs::File::open(&self.path(size))
             .await
             .map_err(|err| match err.kind() {
-                ErrorKind::NotFound => AppError::ImageNotFound,
+                ErrorKind::NotFound => AppError::NotFound,
                 _ => err.into(),
             })?;
 
@@ -79,7 +79,7 @@ impl ProfileImage {
 
     pub async fn get_with_placeholder(&self, size: u32) -> Result<ResponseImage, AppError> {
         match self.get(size).await {
-            Err(AppError::ImageNotFound) => Ok(ResponseImage::Placeholder(self.user_id)),
+            Err(AppError::NotFound) => Ok(ResponseImage::Placeholder(self.user_id)),
             other => other,
         }
     }

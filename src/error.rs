@@ -5,6 +5,7 @@ use axum::{
 use image::ImageError;
 use reqwest::Error as ReqwestError;
 use reqwest::StatusCode;
+use sqlx::Error as SqlxError;
 use std::io::Error as IoError;
 use thiserror::Error;
 use tower_sessions::session::Error as TowerError;
@@ -29,8 +30,11 @@ pub enum AppError {
     #[error("HTTP request error {0}")]
     Reqwest(#[from] ReqwestError),
 
-    #[error("Image processing error")]
+    #[error("Image processing error: {0}")]
     Image(#[from] ImageError),
+
+    #[error("Sqlx error: {0}")]
+    SqlxError(#[from] SqlxError),
 
     #[error("ImageMagick command failed: {0}")]
     Magick(String),
@@ -39,7 +43,7 @@ pub enum AppError {
     ImageResTooLarge,
 
     #[error("The requested image was not found")]
-    ImageNotFound,
+    NotFound,
 
     #[error("Submitted file had an incorrect type")]
     WrongFileType,
@@ -83,7 +87,7 @@ impl AppError {
                 StatusCode::BAD_REQUEST,
                 "Incorrect file type. Please upload a JPG, PNG, GIF, or WEBP file.",
             ),
-            Self::ImageNotFound => (StatusCode::NOT_FOUND, "We couldn't find that image."),
+            Self::NotFound => (StatusCode::NOT_FOUND, "We couldn't find that."),
 
             _ => (
                 StatusCode::INTERNAL_SERVER_ERROR,
