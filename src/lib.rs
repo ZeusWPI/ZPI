@@ -1,21 +1,20 @@
-use axum::{Router, extract::DefaultBodyLimit, response::Html, routing::get};
+use axum::{Router, extract::DefaultBodyLimit, routing::get};
 use reqwest::StatusCode;
 use sqlx::{SqlitePool, migrate::MigrateDatabase};
 use tokio::fs;
 use tower_http::{
     compression::CompressionLayer, cors::CorsLayer, services::ServeDir, trace::TraceLayer,
 };
-use tower_sessions::{MemoryStore, Session, SessionManagerLayer, cookie::SameSite};
+use tower_sessions::{MemoryStore, SessionManagerLayer, cookie::SameSite};
 
 use crate::{
     error::AppError,
     handlers::{
-        auth::{AuthHandler, ZauthUser},
+        auth::AuthHandler,
         image::ImageHandler,
         user::UserHandler,
     },
     image::IMAGE_PATH,
-    pages::Page,
 };
 
 pub mod db;
@@ -24,7 +23,6 @@ pub mod format;
 pub mod handlers;
 pub mod image;
 pub mod models;
-pub mod pages;
 
 pub async fn start_app() -> Result<(), AppError> {
     // create image directory
@@ -63,24 +61,11 @@ pub fn create_router() -> Router<SqlitePool> {
     let static_dir = ServeDir::new("./static");
 
     Router::new()
-        .route("/", get(index))
         .merge(AuthHandler::router())
         .nest("/image", ImageHandler::router())
         .nest("/users", UserHandler::router())
         .nest_service("/static", static_dir)
-        .fallback(get(|| async {
-            (
-                StatusCode::NOT_FOUND,
-                Page::error(StatusCode::NOT_FOUND, "404"),
-            )
-        }))
-}
-
-pub async fn index(session: Session) -> Result<Html<String>, AppError> {
-    Ok(match session.get::<ZauthUser>("user").await? {
-        None => Page::login(),
-        Some(user) => Page::upload(&user.username, user.id),
-    })
+        .fallback(get(|| async { StatusCode::NOT_FOUND }))
 }
 
 async fn shutdown_signal() {
