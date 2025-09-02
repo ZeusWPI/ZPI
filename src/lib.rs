@@ -13,7 +13,6 @@ use crate::{
 
 pub mod db;
 pub mod error;
-pub mod format;
 pub mod handlers;
 pub mod image;
 pub mod models;
