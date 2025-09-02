@@ -22,7 +22,7 @@ impl UserHandler {
         Path(user_id): Path<u32>,
         State(db): State<SqlitePool>,
     ) -> Result<Json<User>, AppError> {
-        Ok(Json(User::get_single(&db, user_id).await))
+        Ok(Json(User::get_single(&db, user_id).await?))
     }
 
     async fn patch(
@@ -31,10 +31,12 @@ impl UserHandler {
         State(db): State<SqlitePool>,
         Json(payload): Json<UserPatchPayload>,
     ) -> Result<Json<User>, AppError> {
-        if user_id == authenticated_user.id {
-            Ok(Json(payload.update_user(&db, authenticated_user).await))
-        } else {
-            Err(AppError::Forbidden)
+        if user_id != authenticated_user.id {
+            return Err(AppError::Forbidden);
+        }
+        match payload.update_user(&db, authenticated_user).await? {
+            Some(user) => Ok(Json(user)),
+            None => Err(AppError::NotFound),
         }
     }
 }

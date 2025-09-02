@@ -19,15 +19,16 @@ impl User {
         }
     }
 
-    pub async fn get_single(db: &SqlitePool, id: u32) -> Self {
-        sqlx::query_as("SELECT id, username, about FROM user WHERE id == ? LIMIT 1;")
-            .bind(id)
-            .fetch_one(db)
-            .await
-            .unwrap()
+    pub async fn get_single(db: &SqlitePool, id: u32) -> Result<Self, AppError> {
+        Ok(
+            sqlx::query_as("SELECT id, username, about FROM user WHERE id == ? LIMIT 1;")
+                .bind(id)
+                .fetch_one(db)
+                .await?,
+        )
     }
 
-    pub async fn create(&self, db: &SqlitePool) {
+    pub async fn create(&self, db: &SqlitePool) -> Result<(), AppError> {
         sqlx::query(
             "
             INSERT INTO user (id, username, about) VALUES (?, ?, ?)
@@ -39,8 +40,8 @@ impl User {
         .bind(&self.about)
         .bind(&self.username)
         .execute(db)
-        .await
-        .expect("insert failed");
+        .await?;
+        Ok(())
     }
 }
 
@@ -56,8 +57,12 @@ pub struct UserPatchPayload {
 }
 
 impl UserPatchPayload {
-    pub async fn update_user(self, db: &SqlitePool, user: AuthenticatedUser) -> User {
-        sqlx::query_as(
+    pub async fn update_user(
+        self,
+        db: &SqlitePool,
+        user: AuthenticatedUser,
+    ) -> Result<Option<User>, AppError> {
+        Ok(sqlx::query_as(
             "
             UPDATE user SET about = ? WHERE id = ?
             RETURNING id, username, about
@@ -65,8 +70,7 @@ impl UserPatchPayload {
         )
         .bind(self.about)
         .bind(user.id)
-        .fetch_one(db)
-        .await
-        .expect("Update about field or current user failed")
+        .fetch_optional(db)
+        .await?)
     }
 }
