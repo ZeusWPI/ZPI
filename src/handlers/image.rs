@@ -7,7 +7,7 @@ use std::{
 use axum::{
     Router,
     extract::{Multipart, Path, Query},
-    response::{IntoResponse, Redirect, Response},
+    response::{IntoResponse, Response},
     routing::{get, post},
 };
 use axum_extra::TypedHeader;
@@ -71,7 +71,7 @@ impl ImageHandler {
     pub async fn post(
         user: AuthenticatedUser,
         mut multipart: Multipart,
-    ) -> Result<Redirect, AppError> {
+    ) -> Result<StatusCode, AppError> {
         while let Some(field) = multipart.next_field().await? {
             if let Some("image-file") = field.name() {
                 let data = field.bytes().await?;
@@ -82,13 +82,13 @@ impl ImageHandler {
                     .save_sizes(SIZES)
                     .await?;
 
-                return Ok(Redirect::to("/"));
+                return Ok(StatusCode::NO_CONTENT);
             }
         }
         Err(AppError::NoFile)
     }
 
-    pub async fn delete(user: AuthenticatedUser) -> Result<Redirect, AppError> {
+    pub async fn delete(user: AuthenticatedUser) -> Result<StatusCode, AppError> {
         let profile = ProfileImage::new(user.id);
         for size in SIZES {
             if let Err(e) = tokio::fs::remove_file(profile.path(*size)).await
@@ -98,7 +98,7 @@ impl ImageHandler {
             }
         }
         tokio::fs::remove_file(profile.path_orig()).await?;
-        Ok(Redirect::to("/"))
+        Ok(StatusCode::NO_CONTENT)
     }
 }
 
