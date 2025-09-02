@@ -51,6 +51,9 @@ pub enum AppError {
 
     #[error("User was not logged in")]
     NotLoggedIn,
+
+    #[error("Forbidden")]
+    Forbidden,
 }
 
 impl IntoResponse for AppError {
@@ -65,6 +68,7 @@ impl AppError {
     fn error_page(&self) -> (StatusCode, Html<String>) {
         let (status, msg) = match self {
             Self::NotLoggedIn => (StatusCode::UNAUTHORIZED, "Not logged in."),
+            Self::Forbidden => (StatusCode::FORBIDDEN, "Forbidden."),
             Self::NoFile => (
                 StatusCode::BAD_REQUEST,
                 "No file found in request. Please select an image.",
