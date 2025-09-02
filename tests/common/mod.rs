@@ -1,15 +1,16 @@
 use std::sync::Arc;
 
 use axum::{
-    Router,
-    body::Body,
-    http::{Request, Response},
+    body::Body, debug_handler, http::{Request, Response}, response::IntoResponse, Json, Router
 };
 use reqwest::header;
 use sqlx::SqlitePool;
 use tower::ServiceExt;
 use tower_sessions::{MemoryStore, Session, SessionManagerLayer, session::Id};
-use zpi::{create_router, models::user::User};
+use zpi::{
+    create_router,
+    models::user::{User, UserPatchPayload},
+};
 
 pub struct AuthenticatedRouter {
     router: Router,
@@ -59,6 +60,25 @@ impl AuthenticatedRouter {
                     .body(Body::empty())
                     .unwrap(),
             )
+            .await
+            .unwrap()
+    }
+
+    // TODO methode generiek maken
+    /// send a patch request to an endpoint on this router
+    ///
+    /// must have a leading "/"
+    pub async fn patch(self, path: &str, body: Json<UserPatchPayload>) -> Response<Body> {
+        self.router
+            .oneshot(dbg!(
+                Request::builder()
+                    .method("PATCH")
+                    .uri(path)
+                    .header(header::COOKIE, &self.cookie)
+                    .header(header::CONTENT_TYPE, mime::APPLICATION_JSON.as_ref())
+                    .body(body.into_response().into_body())
+                    .unwrap(),
+            ))
             .await
             .unwrap()
     }
