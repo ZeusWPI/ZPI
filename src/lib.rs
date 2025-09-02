@@ -9,11 +9,7 @@ use tower_sessions::{MemoryStore, SessionManagerLayer, cookie::SameSite};
 
 use crate::{
     error::AppError,
-    handlers::{
-        auth::AuthHandler,
-        image::ImageHandler,
-        user::UserHandler,
-    },
+    handlers::{auth::AuthHandler, image::ImageHandler, user::UserHandler},
     image::IMAGE_PATH,
 };
 
@@ -58,14 +54,14 @@ pub async fn start_app() -> Result<(), AppError> {
 }
 
 pub fn create_router() -> Router<SqlitePool> {
-    let static_dir = ServeDir::new("./static");
-
-    Router::new()
-        .merge(AuthHandler::router())
-        .nest("/image", ImageHandler::router())
-        .nest("/users", UserHandler::router())
-        .nest_service("/static", static_dir)
-        .fallback(get(|| async { StatusCode::NOT_FOUND }))
+    Router::new().nest(
+        "/api",
+        Router::new()
+            .merge(AuthHandler::router())
+            .nest("/image", ImageHandler::router())
+            .nest("/users", UserHandler::router())
+            .fallback(get(|| async { StatusCode::NOT_FOUND })),
+    )
 }
 
 async fn shutdown_signal() {
