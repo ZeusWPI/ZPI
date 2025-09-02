@@ -24,21 +24,19 @@ impl User {
     }
 
     pub async fn get_by_id(db: &SqlitePool, id: u32) -> Result<Self, AppError> {
-        Ok(
-            sqlx::query_as("SELECT id, username, about FROM user WHERE id == ? LIMIT 1;")
-                .bind(id)
-                .fetch_one(db)
-                .await?,
-        )
+        sqlx::query_as("SELECT id, username, about FROM user WHERE id == ? LIMIT 1;")
+            .bind(id)
+            .fetch_optional(db)
+            .await?
+            .ok_or(AppError::NotFound)
     }
 
     pub async fn get_by_username(db: &SqlitePool, username: String) -> Result<Self, AppError> {
-        Ok(
-            sqlx::query_as("SELECT id, username, about FROM user WHERE username == ? LIMIT 1;")
-                .bind(username)
-                .fetch_one(db)
-                .await?,
-        )
+        sqlx::query_as("SELECT id, username, about FROM user WHERE username == ? LIMIT 1;")
+            .bind(username)
+            .fetch_optional(db)
+            .await?
+            .ok_or(AppError::NotFound)
     }
 
     pub async fn create(&self, db: &SqlitePool) -> Result<(), AppError> {
@@ -74,8 +72,8 @@ impl UserPatchPayload {
         self,
         db: &SqlitePool,
         user: AuthenticatedUser,
-    ) -> Result<Option<User>, AppError> {
-        Ok(sqlx::query_as(
+    ) -> Result<User, AppError> {
+        sqlx::query_as(
             "
             UPDATE user SET about = ? WHERE id = ?
             RETURNING id, username, about
@@ -84,7 +82,8 @@ impl UserPatchPayload {
         .bind(self.about)
         .bind(user.id)
         .fetch_optional(db)
-        .await?)
+        .await?
+        .ok_or(AppError::NotFound)
     }
 }
 
@@ -98,8 +97,8 @@ pub struct UserProfilePayload {
 
 impl UserProfilePayload {
     pub async fn get_by_id(db: &SqlitePool, id: u32) -> Result<Self, AppError> {
-        let user = dbg!(User::get_by_id(db, id).await)?;
-        let tags = dbg!(Tag::for_user(db, id).await)?;
+        let user = User::get_by_id(db, id).await?;
+        let tags = Tag::for_user(db, id).await?;
 
         Ok(UserProfilePayload {
             id: user.id,

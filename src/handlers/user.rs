@@ -39,9 +39,7 @@ impl UserHandler {
         if user_id != authenticated_user.id {
             return Err(AppError::Forbidden);
         }
-        match payload.update_user(&db, authenticated_user).await? {
-            Some(user) => Ok(Json(user)),
-            None => Err(AppError::NotFound),
-        }
+
+        Ok(Json(payload.update_user(&db, authenticated_user).await?))
     }
 }
