@@ -2,13 +2,7 @@
 	import favicon from '$lib/assets/favicon.svg';
 	import logoutIcon from '$lib/assets/logout.svg';
 
-	type User = { id: number, username: string, mattermost: string, name: string }
-	let user: User = {
-		id: 385,
-		username: 'caturn',
-		name: 'Saturn Casaer',
-		mattermost: 'caturn'
-	};
+	let { username } = $props();
 </script>
 
 
@@ -20,8 +14,8 @@
 	</div>
 	<!-- Right Content -->
 	<div class="flex flex-row items-center">
-		<span class="text-lg">{user.username}</span>
-		<a href="/logout">
+		<span class="text-lg">{username}</span>
+		<a href="http://localhost:3000/logout">
 			<img class="size-6 mx-2 invert" src={logoutIcon} alt="Logout" />
 		</a>
 	</div>

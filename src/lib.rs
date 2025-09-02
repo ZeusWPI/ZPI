@@ -47,7 +47,7 @@ pub async fn start_app() -> Result<(), AppError> {
         .layer(DefaultBodyLimit::max(10_485_760))
         .layer(CompressionLayer::new())
         .layer(TraceLayer::new_for_http())
-        .layer(CorsLayer::permissive())
+        .layer(CorsLayer::very_permissive())
         .with_state(db);
 
     // start server
