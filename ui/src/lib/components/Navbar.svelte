@@ -15,7 +15,7 @@
 	<!-- Right Content -->
 	<div class="flex flex-row items-center">
 		<span class="text-lg">{username}</span>
-		<a href="http://localhost:3000/logout">
+		<a href="http://localhost:3000/api/logout">
 			<img class="size-6 mx-2 invert" src={logoutIcon} alt="Logout" />
 		</a>
 	</div>

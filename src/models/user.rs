@@ -1,7 +1,7 @@
+use crate::error::AppError;
+use crate::handlers::{AuthenticatedUser, auth::ZauthUser};
 use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, SqlitePool};
-
-use crate::handlers::{AuthenticatedUser, auth::ZauthUser};
 
 #[derive(Debug, FromRow, Serialize, Deserialize, PartialEq)]
 pub struct User {
