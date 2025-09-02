@@ -3,7 +3,10 @@ use reqwest::StatusCode;
 use sqlx::{SqlitePool, migrate::MigrateDatabase};
 use tokio::fs;
 use tower_http::{
-    compression::CompressionLayer, cors::CorsLayer, services::ServeDir, trace::TraceLayer,
+    compression::CompressionLayer,
+    cors::{Any, CorsLayer},
+    services::ServeDir,
+    trace::TraceLayer,
 };
 use tower_sessions::{MemoryStore, Session, SessionManagerLayer, cookie::SameSite};
 
@@ -47,7 +50,7 @@ pub async fn start_app() -> Result<(), AppError> {
         .layer(DefaultBodyLimit::max(10_485_760))
         .layer(CompressionLayer::new())
         .layer(TraceLayer::new_for_http())
-        .layer(CorsLayer::very_permissive())
+        .layer(CorsLayer::very_permissive().allow_headers(Any))
         .with_state(db);
 
     // start server
