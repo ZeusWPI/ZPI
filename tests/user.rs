@@ -78,6 +78,17 @@ async fn get_profile_by_id(db_pool: SqlitePool) {
     );
 }
 
+#[sqlx::test]
+async fn get_profile_404(db_pool: SqlitePool) {
+    let router = AuthenticatedRouter::new(db_pool.clone()).await;
+    let response = router.get("/api/users/1").await;
+    assert_eq!(response.status(), StatusCode::NOT_FOUND);
+
+    let router = AuthenticatedRouter::new(db_pool).await;
+    let response = router.get("/api/users/cheese").await;
+    assert_eq!(response.status(), StatusCode::NOT_FOUND);
+}
+
 #[sqlx::test(fixtures("user_1"))]
 async fn get_profile_by_name(db_pool: SqlitePool) {
     let router = AuthenticatedRouter::new(db_pool).await;
