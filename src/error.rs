@@ -1,6 +1,6 @@
 use axum::{
     extract::multipart::MultipartError,
-    response::{Html, IntoResponse, Redirect, Response},
+    response::{Html, IntoResponse, Response},
 };
 use image::ImageError;
 use reqwest::Error as ReqwestError;
@@ -57,17 +57,14 @@ impl IntoResponse for AppError {
     fn into_response(self) -> Response {
         // log!
         tracing::error!("{}", self);
-
-        match self {
-            Self::NotLoggedIn => StatusCode::UNAUTHORIZED.into_response(),
-            _ => self.error_page().into_response(),
-        }
+        self.error_page().into_response()
     }
 }
 
 impl AppError {
     fn error_page(&self) -> (StatusCode, Html<String>) {
         let (status, msg) = match self {
+            Self::NotLoggedIn => (StatusCode::UNAUTHORIZED, "Not logged in."),
             Self::NoFile => (
                 StatusCode::BAD_REQUEST,
                 "No file found in request. Please select an image.",
