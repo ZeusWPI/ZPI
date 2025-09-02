@@ -2,9 +2,7 @@ use axum::{Router, extract::DefaultBodyLimit, routing::get};
 use reqwest::StatusCode;
 use sqlx::{SqlitePool, migrate::MigrateDatabase};
 use tokio::fs;
-use tower_http::{
-    compression::CompressionLayer, cors::CorsLayer, services::ServeDir, trace::TraceLayer,
-};
+use tower_http::{compression::CompressionLayer, cors::CorsLayer, trace::TraceLayer};
 use tower_sessions::{MemoryStore, SessionManagerLayer, cookie::SameSite};
 
 use crate::{

@@ -95,7 +95,7 @@ impl AuthHandler {
             .await?;
 
         let user = User::from(zauth_user);
-        user.create(&db).await;
+        user.create(&db).await?;
 
         session.clear().await;
         session.insert("user", user).await?;
