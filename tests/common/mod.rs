@@ -73,7 +73,7 @@ impl AuthenticatedRouter {
     /// must have a leading "/"
     pub async fn patch(self, path: &str, body: Json<UserPatchPayload>) -> Response<Body> {
         self.router
-            .oneshot(dbg!(
+            .oneshot(
                 Request::builder()
                     .method("PATCH")
                     .uri(path)
@@ -81,7 +81,7 @@ impl AuthenticatedRouter {
                     .header(header::CONTENT_TYPE, mime::APPLICATION_JSON.as_ref())
                     .body(body.into_response().into_body())
                     .unwrap(),
-            ))
+            )
             .await
             .unwrap()
     }

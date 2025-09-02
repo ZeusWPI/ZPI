@@ -109,8 +109,8 @@ impl UserProfilePayload {
     }
 
     pub async fn get_by_username(db: &SqlitePool, username: String) -> Result<Self, AppError> {
-        let user = dbg!(User::get_by_username(db, username).await)?;
-        let tags = dbg!(Tag::for_user(db, user.id).await)?;
+        let user = User::get_by_username(db, username).await?;
+        let tags = Tag::for_user(db, user.id).await?;
 
         Ok(UserProfilePayload {
             id: user.id,
