@@ -1,7 +1,4 @@
-use axum::{
-    Json,
-    body::{self, to_bytes},
-};
+use axum::{Json, body::to_bytes};
 use reqwest::StatusCode;
 use sqlx::SqlitePool;
 use zpi::{
