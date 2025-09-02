@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use sqlx::{FromRow, SqlitePool};
 
-use crate::handlers::auth::ZauthUser;
+use crate::handlers::{auth::ZauthUser, AuthenticatedUser};
 
 #[derive(Debug, FromRow, Serialize, Deserialize, PartialEq)]
 pub struct User {
@@ -47,5 +47,25 @@ impl User {
 impl From<ZauthUser> for User {
     fn from(value: ZauthUser) -> Self {
         Self::new(value.id, value.username, String::new())
+    }
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct UserPatchPayload {
+    pub about: String
+}
+
+impl UserPatchPayload {
+    pub async fn update_user(self, db: &SqlitePool, user: AuthenticatedUser) {
+        sqlx::query(
+            "
+            UPDATE user SET about = ? WHERE id = ?
+            ",
+        )
+        .bind(self.about)
+        .bind(user.id)
+        .execute(db)
+        .await
+        .expect("Update about field or current user failed");
     }
 }

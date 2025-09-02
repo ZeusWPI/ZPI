@@ -2,7 +2,7 @@ use axum::extract::{Path, State};
 use axum::{Json, Router, routing::get};
 use sqlx::SqlitePool;
 
-use crate::models::user::User;
+use crate::models::user::{User, UserPatchPayload};
 use crate::{error::AppError, handlers::AuthenticatedUser};
 
 pub struct UserHandler;
@@ -11,7 +11,7 @@ impl UserHandler {
     pub fn router() -> Router<SqlitePool> {
         Router::new()
             .route("/me", get(Self::current_user))
-            .route("/{id}", get(Self::user_with_id))
+            .route("/{id}", get(Self::user_with_id).patch(Self::patch))
     }
 
     async fn current_user(user: AuthenticatedUser) -> Result<Json<AuthenticatedUser>, AppError> {
@@ -23,5 +23,19 @@ impl UserHandler {
         State(db): State<SqlitePool>,
     ) -> Result<Json<User>, AppError> {
         Ok(Json(User::get_single(&db, user_id).await))
+    }
+
+    // TODO return user
+    async fn patch(
+        Path(user_id): Path<u32>,
+        authenticated_user: AuthenticatedUser,
+        State(db): State<SqlitePool>,
+        Json(payload): Json<UserPatchPayload>,
+    ) {
+        if user_id == authenticated_user.id {
+            payload.update_user(&db, authenticated_user).await
+        } else {
+            todo!()
+        }
     }
 }

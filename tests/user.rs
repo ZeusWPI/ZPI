@@ -1,7 +1,13 @@
-use axum::body::to_bytes;
+use axum::{
+    Json,
+    body::{self, to_bytes},
+};
 use reqwest::StatusCode;
 use sqlx::SqlitePool;
-use zpi::{handlers::AuthenticatedUser, models::user::User};
+use zpi::{
+    handlers::AuthenticatedUser,
+    models::user::{User, UserPatchPayload},
+};
 
 use crate::common::AuthenticatedRouter;
 
@@ -47,4 +53,15 @@ async fn get_users_id(db_pool: SqlitePool) {
             about: "Just a test user, doing its job... and fantasizing about a life outside the test environment.".to_string(),
         }
     );
+}
+
+#[sqlx::test(fixtures("user_1"))]
+async fn patch_user(db_pool: SqlitePool) {
+    let router = AuthenticatedRouter::new(db_pool).await;
+    let body = Json(UserPatchPayload {
+        about: "Changed about".to_string(),
+    });
+    let response = router.patch("/users/1", body).await;
+
+    assert_eq!(response.status(), StatusCode::OK);
 }
