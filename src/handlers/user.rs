@@ -25,17 +25,16 @@ impl UserHandler {
         Ok(Json(User::get_single(&db, user_id).await))
     }
 
-    // TODO return user
     async fn patch(
         Path(user_id): Path<u32>,
         authenticated_user: AuthenticatedUser,
         State(db): State<SqlitePool>,
         Json(payload): Json<UserPatchPayload>,
-    ) {
+    ) -> Result<Json<User>, AppError> {
         if user_id == authenticated_user.id {
-            payload.update_user(&db, authenticated_user).await
+            Ok(Json(payload.update_user(&db, authenticated_user).await))
         } else {
-            todo!()
+            Err(AppError::Forbidden)
         }
     }
 }

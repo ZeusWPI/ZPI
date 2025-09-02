@@ -64,4 +64,17 @@ async fn patch_user(db_pool: SqlitePool) {
     let response = router.patch("/users/1", body).await;
 
     assert_eq!(response.status(), StatusCode::OK);
+
+    let body = response.into_body();
+    let user_response: User = serde_json::from_slice(&to_bytes(body, 1000).await.unwrap())
+        .expect("response should be valid json");
+
+    assert_eq!(
+        user_response,
+        User {
+            id: 1,
+            username: "cheese".into(),
+            about: "Changed about".to_string()
+        }
+    );
 }

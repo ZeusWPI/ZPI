@@ -56,16 +56,17 @@ pub struct UserPatchPayload {
 }
 
 impl UserPatchPayload {
-    pub async fn update_user(self, db: &SqlitePool, user: AuthenticatedUser) {
-        sqlx::query(
+    pub async fn update_user(self, db: &SqlitePool, user: AuthenticatedUser) -> User {
+        sqlx::query_as(
             "
             UPDATE user SET about = ? WHERE id = ?
+            RETURNING id, username, about
             ",
         )
         .bind(self.about)
         .bind(user.id)
-        .execute(db)
+        .fetch_one(db)
         .await
-        .expect("Update about field or current user failed");
+        .expect("Update about field or current user failed")
     }
 }
