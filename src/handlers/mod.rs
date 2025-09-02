@@ -11,10 +11,10 @@ pub mod user;
 
 type AppRouter = Router<SqlitePool>;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub struct AuthenticatedUser {
-    id: u32,
-    username: String,
+    pub id: u32,
+    pub username: String,
 }
 
 impl<S> FromRequestParts<S> for AuthenticatedUser
