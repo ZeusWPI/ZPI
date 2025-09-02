@@ -1,6 +1,6 @@
 use axum::{
     extract::multipart::MultipartError,
-    response::{Html, IntoResponse, Response},
+    response::{IntoResponse, Response},
 };
 use image::ImageError;
 use reqwest::Error as ReqwestError;
@@ -8,8 +8,6 @@ use reqwest::StatusCode;
 use std::io::Error as IoError;
 use thiserror::Error;
 use tower_sessions::session::Error as TowerError;
-
-use crate::pages::Page;
 
 #[derive(Debug, Error)]
 pub enum AppError {
@@ -65,7 +63,7 @@ impl IntoResponse for AppError {
 }
 
 impl AppError {
-    fn error_page(&self) -> (StatusCode, Html<String>) {
+    fn error_page(&self) -> (StatusCode, &'static str) {
         let (status, msg) = match self {
             Self::NotLoggedIn => (StatusCode::UNAUTHORIZED, "Not logged in."),
             Self::Forbidden => (StatusCode::FORBIDDEN, "Forbidden."),
@@ -93,6 +91,6 @@ impl AppError {
             ),
         };
 
-        (status, Page::error(status, msg))
+        (status, msg)
     }
 }
