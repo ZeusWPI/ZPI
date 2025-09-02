@@ -56,9 +56,32 @@ async fn patch_user(db_pool: SqlitePool) {
 }
 
 #[sqlx::test(fixtures("user_1"))]
-async fn get_profile(db_pool: SqlitePool) {
+async fn get_profile_by_id(db_pool: SqlitePool) {
     let router = AuthenticatedRouter::new(db_pool).await;
     let response = router.get("/api/users/1").await;
+
+    assert_eq!(response.status(), StatusCode::OK);
+
+    let body = response.into_body();
+    let user_response: UserProfilePayload =
+        serde_json::from_slice(&to_bytes(body, 1000).await.unwrap())
+            .expect("response should be valid json");
+
+    assert_eq!(
+        user_response,
+        UserProfilePayload {
+            id: 1,
+            username: "cheese".into(),
+            about: "Just a test user, doing its job... and fantasizing about a life outside the test environment.".to_string(),
+            tags: Vec::new(),
+        }
+    );
+}
+
+#[sqlx::test(fixtures("user_1"))]
+async fn get_profile_by_name(db_pool: SqlitePool) {
+    let router = AuthenticatedRouter::new(db_pool).await;
+    let response = router.get("/api/users/cheese").await;
 
     assert_eq!(response.status(), StatusCode::OK);
 
