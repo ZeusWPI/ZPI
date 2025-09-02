@@ -2,7 +2,6 @@ use axum::{
     extract::multipart::MultipartError,
     response::{IntoResponse, Response},
 };
-use image::ImageError;
 use reqwest::Error as ReqwestError;
 use reqwest::StatusCode;
 use sqlx::Error as SqlxError;
@@ -29,9 +28,6 @@ pub enum AppError {
 
     #[error("HTTP request error {0}")]
     Reqwest(#[from] ReqwestError),
-
-    #[error("Image processing error: {0}")]
-    Image(#[from] ImageError),
 
     #[error("Sqlx error: {0}")]
     SqlxError(#[from] SqlxError),

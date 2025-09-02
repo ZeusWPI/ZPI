@@ -20,15 +20,13 @@ use svg::{
 use tokio::{fs::File, process::Command, task::JoinSet};
 use tokio_util::io::ReaderStream;
 
-use crate::{error::AppError, format::SupportedFormat};
+use crate::error::AppError;
 
 pub static IMAGE_PATH: LazyLock<PathBuf> =
     LazyLock::new(|| PathBuf::from(env::var("IMAGE_PATH").expect("IMAGE_PATH not present")));
 
 static MAGICK_PATH: LazyLock<String> =
     LazyLock::new(|| env::var("MAGICK_PATH").expect("MAGICK_PATH not present"));
-
-static IMAGE_SAVE_TYPE: SupportedFormat = SupportedFormat::Webp;
 
 pub struct ProfileImage {
     user_id: u32,
@@ -89,7 +87,7 @@ impl ProfileImage {
     }
 
     pub fn path(&self, size: u32) -> PathBuf {
-        let filename = format!("{}.{}.{}", self.user_id, size, IMAGE_SAVE_TYPE.extension());
+        let filename = format!("{}.{}.{}", self.user_id, size, "webp");
         IMAGE_PATH.join(filename)
     }
 }
@@ -183,10 +181,8 @@ impl IntoResponse for ResponseImage {
             }
             Self::File(file) => {
                 let mut body = Body::from_stream(ReaderStream::new(file)).into_response();
-                body.headers_mut().insert(
-                    CONTENT_TYPE,
-                    HeaderValue::from_static(IMAGE_SAVE_TYPE.mime_type()),
-                );
+                body.headers_mut()
+                    .insert(CONTENT_TYPE, HeaderValue::from_static("image/webp"));
                 body
             }
         }
