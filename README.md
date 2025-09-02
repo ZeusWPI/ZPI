@@ -41,3 +41,10 @@ see [env example](./.env.example) for an example
 | `DATABASE_URL` | path to the sqlite database file |
 | `LOG_LEVEL` | log level |
 
+# Development
+
+if you want to enable the git precommit hooks, run:
+
+```
+git config core.hooksPath .githooks
+```

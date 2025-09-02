@@ -1,0 +1,39 @@
+#!/bin/sh
+# This pre-commit hook for Rust projects will:
+# 1. Check code formatting with `cargo fmt`.
+# 2. Run Clippy to catch common mistakes and improve your code.
+# 3. Run the test suite with `cargo test`.
+# If any of these steps fail, the commit will be aborted.
+
+echo "Running Rust pre-commit hook..."
+
+# --- 1. Check Formatting ---
+echo "Checking formatting with 'cargo fmt'..."
+cargo fmt -- --check
+if [ $? -ne 0 ]; then
+    echo "❌ Formatting check failed. Please run 'cargo fmt' to fix." >&2
+    exit 1
+fi
+echo "✅ Formatting is correct."
+
+# --- 2. Run Clippy Linter ---
+# We use -- -D warnings to treat all warnings as errors.
+echo "Running 'cargo clippy'..."
+cargo clippy -- -D warnings
+if [ $? -ne 0 ]; then
+    echo "❌ Clippy checks failed. Please fix the issues before committing." >&2
+    exit 1
+fi
+echo "✅ Clippy checks passed."
+
+# --- 3. Run Tests ---
+echo "Running tests with 'cargo test'..."
+cargo test
+if [ $? -ne 0 ]; then
+    echo "❌ Tests failed. Please fix them before committing." >&2
+    exit 1
+fi
+echo "✅ All tests passed."
+
+echo "🎉 All checks passed. Proceeding with commit."
+exit 0
