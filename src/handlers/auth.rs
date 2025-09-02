@@ -21,6 +21,8 @@ static ZAUTH_CLIENT_ID: LazyLock<String> =
     LazyLock::new(|| env::var("ZAUTH_CLIENT_ID").expect("ZAUTH_CLIENT_ID not present"));
 static ZAUTH_CLIENT_SECRET: LazyLock<String> =
     LazyLock::new(|| env::var("ZAUTH_CLIENT_SECRET").expect("ZAUTH_CLIENT_SECRET not present"));
+static FRONTEND_URL: LazyLock<String> =
+    LazyLock::new(|| env::var("FRONTEND_URL").expect("FRONTEND_URL not present"));
 
 pub struct AuthHandler;
 
@@ -47,7 +49,7 @@ impl AuthHandler {
 
     async fn logout(session: Session) -> impl IntoResponse {
         session.clear().await;
-        Redirect::to("/")
+        Redirect::to(FRONTEND_URL.as_str())
     }
 
     async fn callback(
@@ -97,7 +99,7 @@ impl AuthHandler {
 
         session.clear().await;
         session.insert("user", user).await?;
-        Ok(Redirect::to("/"))
+        Ok(Redirect::to(FRONTEND_URL.as_str()))
     }
 }
 
