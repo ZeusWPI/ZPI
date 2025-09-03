@@ -1,15 +1,13 @@
-use axum::{Router, extract::FromRequestParts, http::request::Parts};
+use axum::{extract::FromRequestParts, http::request::Parts};
+use database::models::user::User;
 use serde::{Deserialize, Serialize};
-use sqlx::SqlitePool;
 use tower_sessions::Session;
 
-use crate::{error::AppError, handlers::auth::ZauthUser};
+use crate::error::AppError;
 
 pub mod auth;
 pub mod image;
 pub mod user;
-
-type AppRouter = Router<SqlitePool>;
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub struct AuthenticatedUser {
@@ -28,13 +26,14 @@ where
             .await
             .map_err(|(_, msg)| AppError::Internal(msg.into()))?;
 
-        let user: Option<ZauthUser> = session.get("user").await.map_err(AppError::Session)?;
-        Ok(user.ok_or(AppError::NotLoggedIn)?.into())
+        let user: Option<AuthenticatedUser> =
+            session.get("user").await.map_err(AppError::Session)?;
+        user.ok_or(AppError::NotLoggedIn)
     }
 }
 
-impl From<ZauthUser> for AuthenticatedUser {
-    fn from(user: ZauthUser) -> Self {
+impl From<User> for AuthenticatedUser {
+    fn from(user: User) -> Self {
         Self {
             id: user.id,
             username: user.username,

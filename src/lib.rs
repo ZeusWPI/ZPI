@@ -1,6 +1,6 @@
 use axum::{Router, extract::DefaultBodyLimit, routing::get};
+use database::Database;
 use reqwest::StatusCode;
-use sqlx::{SqlitePool, migrate::MigrateDatabase};
 use tokio::fs;
 use tower_http::{compression::CompressionLayer, cors::CorsLayer, trace::TraceLayer};
 use tower_sessions::{MemoryStore, SessionManagerLayer, cookie::SameSite};
@@ -11,11 +11,9 @@ use crate::{
     image::IMAGE_PATH,
 };
 
-pub mod db;
 pub mod error;
 pub mod handlers;
 pub mod image;
-pub mod models;
 
 pub async fn start_app() -> Result<(), AppError> {
     // create image directory
@@ -23,17 +21,13 @@ pub async fn start_app() -> Result<(), AppError> {
         fs::create_dir_all(image::IMAGE_PATH.as_path()).await?;
     }
 
-    // setup database
-    sqlx::Sqlite::create_database(&db::DATABASE_URL)
-        .await
-        .unwrap();
-    let db = db::create_conn().await;
-    sqlx::migrate!().run(&db).await.unwrap();
+    let db = Database::create_connect_migrate().await?;
 
     // setup layers
     let sess_store = MemoryStore::default();
     let sess_mw = SessionManagerLayer::new(sess_store).with_same_site(SameSite::Lax);
-    let app = create_router()
+    let app = Router::new()
+        .nest("/api", api_router())
         .layer(sess_mw)
         .layer(DefaultBodyLimit::max(10_485_760))
         .layer(CompressionLayer::new())
@@ -50,15 +44,12 @@ pub async fn start_app() -> Result<(), AppError> {
     Ok(())
 }
 
-pub fn create_router() -> Router<SqlitePool> {
-    Router::new().nest(
-        "/api",
-        Router::new()
-            .merge(AuthHandler::router())
-            .nest("/image", ImageHandler::router())
-            .nest("/users", UserHandler::router())
-            .fallback(get(|| async { StatusCode::NOT_FOUND })),
-    )
+pub fn api_router() -> Router<Database> {
+    Router::new()
+        .merge(AuthHandler::router())
+        .nest("/image", ImageHandler::router())
+        .nest("/users", UserHandler::router())
+        .fallback(get(|| async { StatusCode::NOT_FOUND }))
 }
 
 async fn shutdown_signal() {
