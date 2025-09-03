@@ -1,21 +1,25 @@
 <script lang="ts">
-	import { createQuery, type CreateQueryResult } from '@tanstack/svelte-query';
-	import { browser } from '$app/environment';
-	import { onMount } from 'svelte';
-	import type { Query } from '@tanstack/svelte-query';
+
 	import ImageChangeModal from '$lib/components/ImageChangeModal.svelte';
+	import PencilIcon from '$lib/components/icons/PencilIcon.svelte';
+
 
 	let editImageModal: any;
-
-	const profileImg = 'https://zpi.zeus.gent/image/385';
 
 	let { userId } = $props();
 
 
 </script>
-<button onclick={() => editImageModal.open()}>
-	<img class="size-56 md:object-contain rounded-4xl m-6 mx-auto mb-2" src="https://zpi.zeus.gent/image/{userId}"
-			 alt="Profile">
-</button>
+<div class="relative size-56 m-6 mx-auto mb-2">
+	<button class="cursor-pointer" onclick={() => editImageModal.open()}>
+		<img class="size-56 md:object-contain rounded-4xl"
+				 src="http://localhost:3000/api/image/{userId}"
+				 alt="Profile">
+		<!-- Overlay Icon -->
+		<span class="size-10 p-2 bg-orange-200 text-orange-900 -bottom-2 -right-2 aspect-square rounded-full absolute">
+			<PencilIcon />
+		</span>
+	</button>
+</div>
 
 <ImageChangeModal {userId} bind:this={editImageModal} />
