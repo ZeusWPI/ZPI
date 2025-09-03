@@ -30,6 +30,7 @@ tower-sessions = { version = "0.14.0", default-features = false, features = [
 tracing-subscriber = { version = "=0.3", default-features = false, features = [
     "env-filter",
     "fmt",
+    "ansi",
 ] }
 tokio = { version = "1.47.1", default-features = false, features = [
     "rt-multi-thread",
