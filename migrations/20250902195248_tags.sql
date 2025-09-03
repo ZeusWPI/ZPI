@@ -1,8 +1,17 @@
+CREATE TABLE tag_type
+(
+    id INTEGER PRIMARY KEY NOT NULL,
+    name TEXT NOT NULL
+);
+
 CREATE TABLE tag
 (
     id INTEGER PRIMARY KEY NOT NULL,
     name TEXT NOT NULL UNIQUE,
-    description TEXT
+    description TEXT,
+    type INTEGER NOT NULL,
+
+    FOREIGN KEY (type) REFERENCES type (id)
 );
 
 CREATE TABLE user_tag
