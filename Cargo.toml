@@ -6,6 +6,12 @@ edition = "2024"
 [workspace]
 members = ["database"]
 
+[lints.clippy]
+unwrap_used = "deny"
+expect_used = "deny"
+indexing_slicing = "deny"
+panic = "warn"
+
 [dependencies]
 svg = { version = "0.18.0", default-features = false }
 thiserror = { version = "2.0.16", default-features = false }

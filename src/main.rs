@@ -1,10 +1,11 @@
 use std::error::Error;
 use tracing_subscriber::{EnvFilter, fmt, prelude::*};
-use zpi::start_app;
+use zpi::{config::AppConfig, start_app};
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     let _ = dotenvy::dotenv();
+    let config = AppConfig::load()?;
 
     // setup logging
     tracing_subscriber::registry()
@@ -12,7 +13,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .with(EnvFilter::from_env("LOG_LEVEL"))
         .init();
 
-    start_app().await?;
+    start_app(config).await?;
 
     Ok(())
 }

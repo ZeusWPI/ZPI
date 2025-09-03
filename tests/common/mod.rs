@@ -14,7 +14,7 @@ use reqwest::header;
 use sqlx::SqlitePool;
 use tower::ServiceExt;
 use tower_sessions::{MemoryStore, Session, SessionManagerLayer, session::Id};
-use zpi::api_router;
+use zpi::{AppState, api_router, config::AppConfig};
 
 pub mod to_struct;
 
@@ -25,6 +25,7 @@ pub struct AuthenticatedRouter {
 
 impl AuthenticatedRouter {
     pub async fn new(db: SqlitePool) -> Self {
+        let _ = dotenvy::dotenv();
         let store = Arc::new(MemoryStore::default());
 
         let session_id = {
@@ -48,10 +49,15 @@ impl AuthenticatedRouter {
             .with_secure(false)
             .with_same_site(tower_sessions::cookie::SameSite::Lax);
 
+        let config = AppConfig::load().unwrap();
+
+        let state = AppState {
+            db: Database::new(db),
+            config,
+        };
+
         Self {
-            router: api_router()
-                .layer(session_layer)
-                .with_state(Database::new(db).await),
+            router: api_router().layer(session_layer).with_state(state),
             cookie: format!("id={}", session_id),
         }
     }

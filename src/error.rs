@@ -7,6 +7,7 @@ use reqwest::Error as ReqwestError;
 use reqwest::StatusCode;
 use std::io::Error as IoError;
 use thiserror::Error;
+use tokio::task::JoinError;
 use tower_sessions::session::Error as TowerError;
 
 #[derive(Debug, Error)]
@@ -19,6 +20,9 @@ pub enum AppError {
 
     #[error("I/O error")]
     Io(#[from] IoError),
+
+    #[error("Thread join error: {0}")]
+    Join(#[from] JoinError),
 
     #[error("Internal server error: {0}")]
     Internal(String),
@@ -34,6 +38,12 @@ pub enum AppError {
 
     #[error("ImageMagick command failed: {0}")]
     Magick(String),
+
+    #[error("Env var {0} not set :(")]
+    Env(String),
+
+    #[error("Axum error: {0}")]
+    Axum(#[from] axum::Error),
 
     #[error("Submitted image resolution was too large")]
     ImageResTooLarge,
