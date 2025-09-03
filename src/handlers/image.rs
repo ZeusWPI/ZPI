@@ -6,7 +6,8 @@ use std::{
 
 use axum::{
     Router,
-    extract::{Multipart, Path, Query},
+    body::{Body, Bytes, to_bytes},
+    extract::{Path, Query},
     response::{IntoResponse, Response},
     routing::{get, post},
 };
@@ -68,24 +69,16 @@ impl ImageHandler {
         Ok(resp)
     }
 
-    pub async fn post(
-        user: AuthenticatedUser,
-        mut multipart: Multipart,
-    ) -> Result<StatusCode, AppError> {
-        while let Some(field) = multipart.next_field().await? {
-            if let Some("image-file") = field.name() {
-                let data = field.bytes().await?;
+    pub async fn post(user: AuthenticatedUser, body: Body) -> Result<StatusCode, AppError> {
+        let data: Bytes = to_bytes(body, usize::MAX).await.unwrap();
 
-                ProfileImage::new(user.id)
-                    .with_data(&data)
-                    .await?
-                    .save_sizes(SIZES)
-                    .await?;
+        ProfileImage::new(user.id)
+            .with_data(&data)
+            .await?
+            .save_sizes(SIZES)
+            .await?;
 
-                return Ok(StatusCode::NO_CONTENT);
-            }
-        }
-        Err(AppError::NoFile)
+        Ok(StatusCode::NO_CONTENT)
     }
 
     pub async fn delete(user: AuthenticatedUser) -> Result<StatusCode, AppError> {
