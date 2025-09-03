@@ -12,10 +12,10 @@ use axum::{
     routing::{get, post},
 };
 use axum_extra::TypedHeader;
+use database::Database;
 use headers::{ETag, IfNoneMatch};
 use reqwest::{StatusCode, header::ETAG};
 use serde::Deserialize;
-use sqlx::SqlitePool;
 
 use crate::{error::AppError, handlers::AuthenticatedUser, image::ProfileImage};
 
@@ -24,7 +24,7 @@ static SIZES: &[u32] = &[64, 128, 256, 512];
 pub struct ImageHandler;
 
 impl ImageHandler {
-    pub fn router() -> Router<SqlitePool> {
+    pub fn router() -> Router<Database> {
         Router::new()
             .route("/", post(Self::post).delete(Self::delete))
             .route("/{id}", get(Self::get))

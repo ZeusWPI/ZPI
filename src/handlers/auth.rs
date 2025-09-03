@@ -6,12 +6,12 @@ use axum::{
     response::{IntoResponse, Redirect},
     routing::get,
 };
+use database::{Database, models::user::UserCreatePayload};
 use rand::distr::{Alphanumeric, SampleString};
 use serde::{Deserialize, Serialize};
-use sqlx::SqlitePool;
 use tower_sessions::Session;
 
-use crate::{error::AppError, handlers::AppRouter, models::user::User};
+use crate::{error::AppError, handlers::AuthenticatedUser};
 
 static ZAUTH_URL: LazyLock<String> =
     LazyLock::new(|| env::var("ZAUTH_URL").expect("ZAUTH_URL not present"));
@@ -27,7 +27,7 @@ static FRONTEND_URL: LazyLock<String> =
 pub struct AuthHandler;
 
 impl AuthHandler {
-    pub fn router() -> AppRouter {
+    pub fn router() -> Router<Database> {
         Router::new()
             .route("/login", get(Self::login))
             .route("/oauth/callback", get(Self::callback))
@@ -55,7 +55,7 @@ impl AuthHandler {
     async fn callback(
         Query(params): Query<Callback>,
         session: Session,
-        State(db): State<SqlitePool>,
+        State(db): State<Database>,
     ) -> Result<Redirect, AppError> {
         let zauth_state = match session.get::<String>("state").await? {
             None => return Ok(Redirect::to("/login")),
@@ -94,11 +94,12 @@ impl AuthHandler {
             .json::<ZauthUser>()
             .await?;
 
-        let user = User::from(zauth_user);
-        user.create(&db).await?;
+        let user = db.users().create(zauth_user.into()).await?;
 
         session.clear().await;
-        session.insert("user", user).await?;
+        session
+            .insert("user", AuthenticatedUser::from(user))
+            .await?;
         Ok(Redirect::to(FRONTEND_URL.as_str()))
     }
 }
@@ -118,4 +119,13 @@ pub struct ZauthToken {
 pub struct ZauthUser {
     pub id: u32,
     pub username: String,
+}
+
+impl From<ZauthUser> for UserCreatePayload {
+    fn from(value: ZauthUser) -> Self {
+        Self {
+            id: value.id,
+            username: value.username,
+        }
+    }
 }

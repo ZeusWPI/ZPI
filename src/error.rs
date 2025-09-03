@@ -2,9 +2,9 @@ use axum::{
     extract::multipart::MultipartError,
     response::{IntoResponse, Response},
 };
+use database::error::DatabaseError;
 use reqwest::Error as ReqwestError;
 use reqwest::StatusCode;
-use sqlx::Error as SqlxError;
 use std::io::Error as IoError;
 use thiserror::Error;
 use tower_sessions::session::Error as TowerError;
@@ -29,8 +29,8 @@ pub enum AppError {
     #[error("HTTP request error {0}")]
     Reqwest(#[from] ReqwestError),
 
-    #[error("Sqlx error: {0}")]
-    SqlxError(#[from] SqlxError),
+    #[error("Database error: {0}")]
+    Database(DatabaseError),
 
     #[error("ImageMagick command failed: {0}")]
     Magick(String),
@@ -92,5 +92,14 @@ impl AppError {
         };
 
         (status, msg)
+    }
+}
+
+impl From<DatabaseError> for AppError {
+    fn from(value: DatabaseError) -> Self {
+        match value {
+            DatabaseError::NotFound => Self::NotFound,
+            other => Self::Database(other),
+        }
     }
 }

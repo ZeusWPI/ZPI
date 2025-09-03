@@ -6,14 +6,17 @@ use axum::{
     http::{Request, Response},
     response::IntoResponse,
 };
+use database::{
+    Database,
+    models::user::{User, UserPatchPayload},
+};
 use reqwest::header;
 use sqlx::SqlitePool;
 use tower::ServiceExt;
 use tower_sessions::{MemoryStore, Session, SessionManagerLayer, session::Id};
-use zpi::{
-    create_router,
-    models::user::{User, UserPatchPayload},
-};
+use zpi::api_router;
+
+pub mod to_struct;
 
 pub struct AuthenticatedRouter {
     router: Router,
@@ -46,7 +49,9 @@ impl AuthenticatedRouter {
             .with_same_site(tower_sessions::cookie::SameSite::Lax);
 
         Self {
-            router: create_router().layer(session_layer).with_state(db),
+            router: api_router()
+                .layer(session_layer)
+                .with_state(Database::new(db).await),
             cookie: format!("id={}", session_id),
         }
     }

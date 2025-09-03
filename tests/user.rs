@@ -1,10 +1,10 @@
+use std::usize;
+
 use axum::{Json, body::to_bytes};
+use database::models::user::{User, UserPatchPayload, UserProfile};
 use reqwest::StatusCode;
 use sqlx::SqlitePool;
-use zpi::{
-    handlers::AuthenticatedUser,
-    models::user::{User, UserPatchPayload, UserProfilePayload},
-};
+use zpi::handlers::AuthenticatedUser;
 
 use crate::common::AuthenticatedRouter;
 
@@ -13,13 +13,13 @@ mod common;
 #[sqlx::test]
 async fn get_users_me(db_pool: SqlitePool) {
     let router = AuthenticatedRouter::new(db_pool).await;
-    let response = router.get("/api/users/me").await;
+    let response = router.get("/users/me").await;
 
     assert_eq!(response.status(), StatusCode::OK);
 
     let body = response.into_body();
     let user_response: AuthenticatedUser =
-        serde_json::from_slice(&to_bytes(body, 1000).await.unwrap())
+        serde_json::from_slice(&to_bytes(body, usize::MAX).await.unwrap())
             .expect("response should be valid json");
 
     assert_eq!(
@@ -37,7 +37,7 @@ async fn patch_user(db_pool: SqlitePool) {
     let body = Json(UserPatchPayload {
         about: "Changed about".to_string(),
     });
-    let response = router.patch("/api/users/1", body).await;
+    let response = router.patch("/users/1", body).await;
 
     assert_eq!(response.status(), StatusCode::OK);
 
@@ -58,18 +58,17 @@ async fn patch_user(db_pool: SqlitePool) {
 #[sqlx::test(fixtures("user_1"))]
 async fn get_profile_by_id(db_pool: SqlitePool) {
     let router = AuthenticatedRouter::new(db_pool).await;
-    let response = router.get("/api/users/1").await;
+    let response = router.get("/users/1").await;
 
     assert_eq!(response.status(), StatusCode::OK);
 
     let body = response.into_body();
-    let user_response: UserProfilePayload =
-        serde_json::from_slice(&to_bytes(body, 1000).await.unwrap())
-            .expect("response should be valid json");
+    let user_response: UserProfile = serde_json::from_slice(&to_bytes(body, 1000).await.unwrap())
+        .expect("response should be valid json");
 
     assert_eq!(
         user_response,
-        UserProfilePayload {
+        UserProfile {
             id: 1,
             username: "cheese".into(),
             about: "Just a test user, doing its job... and fantasizing about a life outside the test environment.".to_string(),
@@ -81,29 +80,28 @@ async fn get_profile_by_id(db_pool: SqlitePool) {
 #[sqlx::test]
 async fn get_profile_404(db_pool: SqlitePool) {
     let router = AuthenticatedRouter::new(db_pool.clone()).await;
-    let response = router.get("/api/users/1").await;
+    let response = router.get("/users/1").await;
     assert_eq!(response.status(), StatusCode::NOT_FOUND);
 
     let router = AuthenticatedRouter::new(db_pool).await;
-    let response = router.get("/api/users/cheese").await;
+    let response = router.get("/users/cheese").await;
     assert_eq!(response.status(), StatusCode::NOT_FOUND);
 }
 
 #[sqlx::test(fixtures("user_1"))]
 async fn get_profile_by_name(db_pool: SqlitePool) {
     let router = AuthenticatedRouter::new(db_pool).await;
-    let response = router.get("/api/users/cheese").await;
+    let response = router.get("/users/cheese").await;
 
     assert_eq!(response.status(), StatusCode::OK);
 
     let body = response.into_body();
-    let user_response: UserProfilePayload =
-        serde_json::from_slice(&to_bytes(body, 1000).await.unwrap())
-            .expect("response should be valid json");
+    let user_response: UserProfile = serde_json::from_slice(&to_bytes(body, 1000).await.unwrap())
+        .expect("response should be valid json");
 
     assert_eq!(
         user_response,
-        UserProfilePayload {
+        UserProfile {
             id: 1,
             username: "cheese".into(),
             about: "Just a test user, doing its job... and fantasizing about a life outside the test environment.".to_string(),
