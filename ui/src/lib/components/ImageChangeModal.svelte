@@ -14,9 +14,7 @@
 	export function open() {
 		dialog.open();
 	}
-
-	onMount(open); //TODO Remove
-
+	
 	let loadFile = function(event: any) {
 		let previewImage = document.getElementById('previewImg') as HTMLImageElement;
 		previewImage.src = URL.createObjectURL(event.target.files[0]);
@@ -27,7 +25,10 @@
 	};
 
 	function resetImage() {
-		fetch('/image', { method: 'DELETE' }).then(() => location.reload());
+		fetch('http://localhost:3000/api/image', {
+			method: 'DELETE',
+			credentials: 'include'
+		}).then(() => location.reload());
 	}
 
 	function uploadImage() {
@@ -36,7 +37,7 @@
 			headers: {},
 			body: (document.getElementById('file-upload') as HTMLInputElement).files?.[0],
 			credentials: 'include'
-		});
+		}).then(() => location.reload());
 	}
 
 </script>
@@ -67,43 +68,41 @@
 						class="w-full max-w-md transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all"
 						use:dialog.modal
 					>
-						<form action="http://localhost:3000/api/image" method="post" enctype="multipart/form-data">
-							<h3 class="text-lg leading-6 font-medium text-gray-900">Change Profile Image</h3>
-							<div class="mt-2 flex flex-row justify-center">
-								<img id="previewImg" class="size-32 rounded-xl m-7" src="https://zpi.zeus.gent/image/{userId}"
-										 alt="Preview">
-								<div class="flex flex-col justify-center">
-									<label
-										class="my-1 rounded-md border border-transparent bg-orange-100 px-4 py-2 text-lg font-medium text-orange-900 hover:bg-orange-200 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2"
-										for="file-upload">Select Image</label>
-									<input class="hidden" id="file-upload" type="file"
-												 name="image-file"
-												 accept="image/jpeg,image/png,image/gif,image/webp" onchange={loadFile}>
-									<button
-										class="my-1 justify-center rounded-md border-2 border-orange-900  px-4 py-2 text-lg font-medium text-orange-900 hover:bg-orange-200 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2"
-										onclick={resetImage}
-									>Reset
-									</button>
-								</div>
+						<h3 class="text-lg leading-6 font-medium text-gray-900">Change Profile Image</h3>
+						<div class="mt-2 flex flex-row justify-center">
+							<img id="previewImg" class="size-32 rounded-xl m-7" src="http://localhost:3000/api/image/{userId}"
+									 alt="Preview">
+							<div class="flex flex-col justify-center">
+								<label
+									class="my-1 rounded-md border border-transparent bg-orange-100 px-4 py-2 text-lg font-medium text-orange-900 hover:bg-orange-200 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2"
+									for="file-upload">Select Image</label>
+								<input class="hidden" id="file-upload" type="file"
+											 name="image-file"
+											 accept="image/jpeg,image/png,image/gif,image/webp" onchange={loadFile}>
+								<button
+									class="my-1 justify-center rounded-md border-2 border-orange-900  px-4 py-2 text-lg font-medium text-orange-900 hover:bg-orange-200 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2"
+									onclick={resetImage}
+								>Reset
+								</button>
 							</div>
+						</div>
 
-							<div class="mt-4 flex flex-row justify-between">
-								<button
-									type="button"
-									class="inline-flex justify-center rounded-md border-2 border-orange-900  px-4 py-2 text-sm font-medium text-orange-900 hover:bg-orange-200 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2"
-									onclick={dialog.close}
-								>
-									Close
-								</button>
-								<button
-									type="button"
-									class="inline-flex justify-center rounded-md border border-transparent bg-orange-100 px-4 py-2 text-sm font-medium text-orange-900 hover:bg-orange-200 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2"
-									onclick={uploadImage}
-								>
-									Confirm
-								</button>
-							</div>
-						</form>
+						<div class="mt-4 flex flex-row justify-between">
+							<button
+								type="button"
+								class="inline-flex justify-center rounded-md border-2 border-orange-900  px-4 py-2 text-sm font-medium text-orange-900 hover:bg-orange-200 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2"
+								onclick={dialog.close}
+							>
+								Close
+							</button>
+							<button
+								type="button"
+								class="inline-flex justify-center rounded-md border border-transparent bg-orange-100 px-4 py-2 text-sm font-medium text-orange-900 hover:bg-orange-200 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-orange-500 focus-visible:ring-offset-2"
+								onclick={uploadImage}
+							>
+								Confirm
+							</button>
+						</div>
 					</div>
 				</Transition>
 			</div>
