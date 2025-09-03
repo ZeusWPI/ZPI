@@ -7,24 +7,24 @@ use std::{
 use axum::{
     Router,
     body::{Body, Bytes, to_bytes},
-    extract::{Path, Query},
+    extract::{Path, Query, State},
     response::{IntoResponse, Response},
     routing::{get, post},
 };
 use axum_extra::TypedHeader;
-use database::Database;
 use headers::{ETag, IfNoneMatch};
 use reqwest::{StatusCode, header::ETAG};
 use serde::Deserialize;
 
-use crate::{error::AppError, handlers::AuthenticatedUser, image::ProfileImage};
+use crate::{AppState, error::AppError, handlers::AuthenticatedUser, image::ProfileImage};
 
 static SIZES: &[u32] = &[64, 128, 256, 512];
+static MAX_SIZE: u32 = 512;
 
 pub struct ImageHandler;
 
 impl ImageHandler {
-    pub fn router() -> Router<Database> {
+    pub fn router() -> Router<AppState> {
         Router::new()
             .route("/", post(Self::post).delete(Self::delete))
             .route("/{id}", get(Self::get))
@@ -34,6 +34,7 @@ impl ImageHandler {
         Query(params): Query<GetImageQuery>,
         Path(user_id): Path<u32>,
         if_none_match: Option<TypedHeader<IfNoneMatch>>,
+        State(state): State<AppState>,
     ) -> Result<Response, AppError> {
         // default size
         let requested_size = params.size.unwrap_or(256);
@@ -42,9 +43,9 @@ impl ImageHandler {
             .iter()
             .filter(|x| **x > requested_size)
             .min()
-            .unwrap_or(SIZES.iter().max().unwrap());
+            .unwrap_or(&MAX_SIZE);
 
-        let profile = ProfileImage::new(user_id);
+        let profile = ProfileImage::new(user_id, state.config);
         let etag_opt = file_modified_etag(&profile.path(size)).await?;
 
         // return early if etag matches
@@ -69,10 +70,14 @@ impl ImageHandler {
         Ok(resp)
     }
 
-    pub async fn post(user: AuthenticatedUser, body: Body) -> Result<StatusCode, AppError> {
-        let data: Bytes = to_bytes(body, usize::MAX).await.unwrap();
+    pub async fn post(
+        user: AuthenticatedUser,
+        State(state): State<AppState>,
+        body: Body,
+    ) -> Result<StatusCode, AppError> {
+        let data: Bytes = to_bytes(body, usize::MAX).await?;
 
-        ProfileImage::new(user.id)
+        ProfileImage::new(user.id, state.config)
             .with_data(&data)
             .await?
             .save_sizes(SIZES)
@@ -81,8 +86,11 @@ impl ImageHandler {
         Ok(StatusCode::NO_CONTENT)
     }
 
-    pub async fn delete(user: AuthenticatedUser) -> Result<StatusCode, AppError> {
-        let profile = ProfileImage::new(user.id);
+    pub async fn delete(
+        user: AuthenticatedUser,
+        State(state): State<AppState>,
+    ) -> Result<StatusCode, AppError> {
+        let profile = ProfileImage::new(user.id, state.config);
         for size in SIZES {
             if let Err(e) = tokio::fs::remove_file(profile.path(*size)).await
                 && e.kind() != NotFound

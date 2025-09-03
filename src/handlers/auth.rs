@@ -1,61 +1,48 @@
-use std::{env, sync::LazyLock};
-
 use axum::{
     Router,
     extract::{Query, State},
     response::{IntoResponse, Redirect},
     routing::get,
 };
-use database::{Database, models::user::UserCreatePayload};
+use database::models::user::UserCreatePayload;
 use rand::distr::{Alphanumeric, SampleString};
 use serde::{Deserialize, Serialize};
 use tower_sessions::Session;
 
-use crate::{error::AppError, handlers::AuthenticatedUser};
-
-static ZAUTH_URL: LazyLock<String> =
-    LazyLock::new(|| env::var("ZAUTH_URL").expect("ZAUTH_URL not present"));
-static CALLBACK_URL: LazyLock<String> =
-    LazyLock::new(|| env::var("ZAUTH_CALLBACK_PATH").expect("ZAUTH_CALLBACK_PATH not present"));
-static ZAUTH_CLIENT_ID: LazyLock<String> =
-    LazyLock::new(|| env::var("ZAUTH_CLIENT_ID").expect("ZAUTH_CLIENT_ID not present"));
-static ZAUTH_CLIENT_SECRET: LazyLock<String> =
-    LazyLock::new(|| env::var("ZAUTH_CLIENT_SECRET").expect("ZAUTH_CLIENT_SECRET not present"));
-static FRONTEND_URL: LazyLock<String> =
-    LazyLock::new(|| env::var("FRONTEND_URL").expect("FRONTEND_URL not present"));
+use crate::{AppState, error::AppError, handlers::AuthenticatedUser};
 
 pub struct AuthHandler;
 
 impl AuthHandler {
-    pub fn router() -> Router<Database> {
+    pub fn router() -> Router<AppState> {
         Router::new()
             .route("/login", get(Self::login))
             .route("/oauth/callback", get(Self::callback))
             .route("/logout", get(Self::logout))
     }
 
-    async fn login(session: Session) -> Result<Redirect, AppError> {
-        let state = Alphanumeric.sample_string(&mut rand::rng(), 16);
+    async fn login(session: Session, State(state): State<AppState>) -> Result<Redirect, AppError> {
+        let zauth_state = Alphanumeric.sample_string(&mut rand::rng(), 16);
         // insert state so we can check it in the callback
-        session.insert("state", state.clone()).await?;
+        session.insert("state", zauth_state.clone()).await?;
         // redirect to zauth to authenticate
-        let zauth_url = ZAUTH_URL.to_string();
-        let callback_url = CALLBACK_URL.to_string();
-        let zauth_client_id = ZAUTH_CLIENT_ID.to_string();
+        let zauth_url = state.config.zauth_url.to_string();
+        let callback_url = state.config.zauth_callback.to_string();
+        let zauth_client_id = state.config.zauth_client_id.to_string();
         Ok(Redirect::to(&format!(
-            "{zauth_url}/oauth/authorize?client_id={zauth_client_id}&response_type=code&state={state}&redirect_uri={callback_url}"
+            "{zauth_url}/oauth/authorize?client_id={zauth_client_id}&response_type=code&state={zauth_state}&redirect_uri={callback_url}"
         )))
     }
 
-    async fn logout(session: Session) -> impl IntoResponse {
+    async fn logout(session: Session, State(state): State<AppState>) -> impl IntoResponse {
         session.clear().await;
-        Redirect::to(FRONTEND_URL.as_str())
+        Redirect::to(&state.config.frontend_url)
     }
 
     async fn callback(
         Query(params): Query<Callback>,
         session: Session,
-        State(db): State<Database>,
+        State(state): State<AppState>,
     ) -> Result<Redirect, AppError> {
         let zauth_state = match session.get::<String>("state").await? {
             None => return Ok(Redirect::to("/login")),
@@ -71,13 +58,16 @@ impl AuthHandler {
         let form = [
             ("grant_type", "authorization_code"),
             ("code", &params.code),
-            ("redirect_uri", &CALLBACK_URL),
+            ("redirect_uri", &state.config.zauth_callback),
         ];
 
         // get token from zauth with code
         let token = client
-            .post(format!("{}/oauth/token", ZAUTH_URL.as_str()))
-            .basic_auth(ZAUTH_CLIENT_ID.as_str(), Some(ZAUTH_CLIENT_SECRET.as_str()))
+            .post(format!("{}/oauth/token", state.config.zauth_url.as_str()))
+            .basic_auth(
+                state.config.zauth_client_id,
+                Some(state.config.zauth_client_secret),
+            )
             .form(&form)
             .send()
             .await?
@@ -86,7 +76,7 @@ impl AuthHandler {
 
         // get user info from zauth
         let zauth_user = client
-            .get(format!("{}/current_user", ZAUTH_URL.as_str()))
+            .get(format!("{}/current_user", state.config.zauth_url))
             .header("Authorization", "Bearer ".to_owned() + &token.access_token)
             .send()
             .await?
@@ -94,13 +84,13 @@ impl AuthHandler {
             .json::<ZauthUser>()
             .await?;
 
-        let user = db.users().create(zauth_user.into()).await?;
+        let user = state.db.users().create(zauth_user.into()).await?;
 
         session.clear().await;
         session
             .insert("user", AuthenticatedUser::from(user))
             .await?;
-        Ok(Redirect::to(FRONTEND_URL.as_str()))
+        Ok(Redirect::to(&state.config.frontend_url))
     }
 }
 

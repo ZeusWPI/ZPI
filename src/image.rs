@@ -1,9 +1,4 @@
-use std::{
-    env,
-    io::ErrorKind,
-    path::PathBuf,
-    sync::{Arc, LazyLock},
-};
+use std::{io::ErrorKind, path::PathBuf, sync::Arc};
 
 use axum::{
     body::Body,
@@ -20,16 +15,11 @@ use svg::{
 use tokio::{fs::File, process::Command, task::JoinSet};
 use tokio_util::io::ReaderStream;
 
-use crate::error::AppError;
-
-pub static IMAGE_PATH: LazyLock<PathBuf> =
-    LazyLock::new(|| PathBuf::from(env::var("IMAGE_PATH").expect("IMAGE_PATH not present")));
-
-static MAGICK_PATH: LazyLock<String> =
-    LazyLock::new(|| env::var("MAGICK_PATH").expect("MAGICK_PATH not present"));
+use crate::{config::AppConfig, error::AppError};
 
 pub struct ProfileImage {
     user_id: u32,
+    config: AppConfig,
 }
 
 pub struct DataImage {
@@ -42,9 +32,9 @@ pub enum ResponseImage {
 }
 
 impl ProfileImage {
-    pub fn new(user_id: u32) -> Self {
+    pub fn new(user_id: u32, config: AppConfig) -> Self {
         tracing::debug!("new user with id {user_id}");
-        Self { user_id }
+        Self { user_id, config }
     }
 
     pub async fn with_data(self, data: &[u8]) -> Result<DataImage, AppError> {
@@ -83,12 +73,12 @@ impl ProfileImage {
     }
 
     pub fn path_orig(&self) -> PathBuf {
-        IMAGE_PATH.join(self.user_id.to_string())
+        self.config.image_path.join(self.user_id.to_string())
     }
 
     pub fn path(&self, size: u32) -> PathBuf {
         let filename = format!("{}.{}.{}", self.user_id, size, "webp");
-        IMAGE_PATH.join(filename)
+        self.config.image_path.join(filename)
     }
 }
 
@@ -105,7 +95,7 @@ impl DataImage {
         }
 
         while let Some(res) = set.join_next().await {
-            res.unwrap()?;
+            res??;
         }
 
         Ok(())
@@ -140,16 +130,20 @@ impl DataImage {
 
         tracing::debug!(
             "running command '{}' with args {:?}",
-            MAGICK_PATH.as_str(),
+            self.profile.config.magick_path.as_str(),
             args
         );
 
         // check if command was found
-        let output = match Command::new(MAGICK_PATH.as_str()).args(args).output().await {
+        let output = match Command::new(&self.profile.config.magick_path)
+            .args(args)
+            .output()
+            .await
+        {
             Ok(output) => Ok(output),
             Err(e) if e.kind() == ErrorKind::NotFound => Err(AppError::Magick(format!(
                 "command not found '{}'. install ImageMagick or set MAGICK_PATH.",
-                MAGICK_PATH.as_str()
+                self.profile.config.magick_path
             ))),
             Err(e) => Err(e)?,
         }?;
@@ -174,7 +168,7 @@ impl IntoResponse for ResponseImage {
     fn into_response(self) -> Response {
         match self {
             Self::Placeholder(user_id) => {
-                let mut body = Body::from(make_placeholder(user_id)).into_response();
+                let mut body = make_placeholder(user_id).into_response();
                 body.headers_mut()
                     .insert(CONTENT_TYPE, HeaderValue::from_static("image/svg+xml"));
                 body
@@ -189,7 +183,7 @@ impl IntoResponse for ResponseImage {
     }
 }
 
-fn make_placeholder(user_id: u32) -> Vec<u8> {
+fn make_placeholder(user_id: u32) -> Result<Body, AppError> {
     // svg made by @flynn
     let mut rand_gen = SmallRng::seed_from_u64(user_id as u64);
     let polygon_points = "9.0,0.0 4.5,7.794 -4.5,7.794 -9.0,0 -4.5,-7.794 4.5,-7.794";
@@ -241,7 +235,12 @@ fn make_placeholder(user_id: u32) -> Vec<u8> {
             .set("xlink:href", "#cube")
             .set("x", x)
             .set("y", y)
-            .set("fill", *colors.choose(&mut rand_gen).unwrap());
+            .set(
+                "fill",
+                *colors
+                    .choose(&mut rand_gen)
+                    .ok_or(AppError::Internal("random fault".into()))?,
+            );
         main_group = main_group.add(use_element);
     }
 
@@ -270,7 +269,7 @@ fn make_placeholder(user_id: u32) -> Vec<u8> {
         .add(main_group);
 
     let mut buffer = Vec::new();
-    svg::write(&mut buffer, &document).unwrap();
+    svg::write(&mut buffer, &document)?;
 
-    buffer
+    Ok(Body::from(buffer))
 }

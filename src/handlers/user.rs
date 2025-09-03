@@ -1,14 +1,15 @@
 use axum::extract::{Path, State};
 use axum::{Json, Router, routing::get};
+use database::models::user::UserProfile;
 use database::models::user::{User, UserPatchPayload};
-use database::{Database, models::user::UserProfile};
 
+use crate::AppState;
 use crate::{error::AppError, handlers::AuthenticatedUser};
 
 pub struct UserHandler;
 
 impl UserHandler {
-    pub fn router() -> Router<Database> {
+    pub fn router() -> Router<AppState> {
         Router::new()
             .route("/me", get(Self::current_user))
             .route("/{id}", get(Self::profile).patch(Self::patch))
@@ -20,24 +21,30 @@ impl UserHandler {
 
     async fn profile(
         Path(user_id_or_name): Path<String>,
-        State(db): State<Database>,
+        State(state): State<AppState>,
     ) -> Result<Json<UserProfile>, AppError> {
         match user_id_or_name.parse::<u32>() {
-            Ok(id) => Ok(Json(db.users().profile_by_id(id).await?)),
-            Err(_) => Ok(Json(db.users().profile_by_username(user_id_or_name).await?)),
+            Ok(id) => Ok(Json(state.db.users().profile_by_id(id).await?)),
+            Err(_) => Ok(Json(
+                state
+                    .db
+                    .users()
+                    .profile_by_username(user_id_or_name)
+                    .await?,
+            )),
         }
     }
 
     async fn patch(
         Path(user_id): Path<u32>,
         authenticated_user: AuthenticatedUser,
-        State(db): State<Database>,
+        State(state): State<AppState>,
         Json(payload): Json<UserPatchPayload>,
     ) -> Result<Json<User>, AppError> {
         if user_id != authenticated_user.id {
             return Err(AppError::Forbidden);
         }
 
-        Ok(Json(db.users().patch(user_id, payload).await?))
+        Ok(Json(state.db.users().patch(user_id, payload).await?))
     }
 }

@@ -6,22 +6,31 @@ use tower_http::{compression::CompressionLayer, cors::CorsLayer, trace::TraceLay
 use tower_sessions::{MemoryStore, SessionManagerLayer, cookie::SameSite};
 
 use crate::{
+    config::AppConfig,
     error::AppError,
     handlers::{auth::AuthHandler, image::ImageHandler, user::UserHandler},
-    image::IMAGE_PATH,
 };
 
+pub mod config;
 pub mod error;
 pub mod handlers;
 pub mod image;
 
-pub async fn start_app() -> Result<(), AppError> {
+#[derive(Clone)]
+pub struct AppState {
+    pub db: Database,
+    pub config: AppConfig,
+}
+
+pub async fn start_app(config: AppConfig) -> Result<(), AppError> {
     // create image directory
-    if !IMAGE_PATH.exists() {
-        fs::create_dir_all(image::IMAGE_PATH.as_path()).await?;
+    if !config.image_path.exists() {
+        fs::create_dir_all(config.image_path.as_path()).await?;
     }
 
-    let db = Database::create_connect_migrate().await?;
+    let db = Database::create_connect_migrate(&config.database_url).await?;
+
+    let state = AppState { db, config };
 
     // setup layers
     let sess_store = MemoryStore::default();
@@ -33,7 +42,7 @@ pub async fn start_app() -> Result<(), AppError> {
         .layer(CompressionLayer::new())
         .layer(TraceLayer::new_for_http())
         .layer(CorsLayer::very_permissive())
-        .with_state(db);
+        .with_state(state);
 
     // start server
     let listener = tokio::net::TcpListener::bind("0.0.0.0:3000").await?;
@@ -44,7 +53,7 @@ pub async fn start_app() -> Result<(), AppError> {
     Ok(())
 }
 
-pub fn api_router() -> Router<Database> {
+pub fn api_router() -> Router<AppState> {
     Router::new()
         .merge(AuthHandler::router())
         .nest("/image", ImageHandler::router())
@@ -52,6 +61,7 @@ pub fn api_router() -> Router<Database> {
         .fallback(get(|| async { StatusCode::NOT_FOUND }))
 }
 
+#[allow(clippy::expect_used)]
 async fn shutdown_signal() {
     let ctrl_c = async {
         tokio::signal::ctrl_c()
