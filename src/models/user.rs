@@ -1,11 +1,7 @@
 use serde::{Deserialize, Serialize};
 use sqlx::{Decode, FromRow, SqlitePool};
 
-use crate::{
-    error::AppError,
-    handlers::{AuthenticatedUser, auth::ZauthUser},
-    models::tag::Tag,
-};
+use crate::{error::AppError, handlers::auth::ZauthUser, models::tag::Tag};
 
 #[derive(Debug, FromRow, Serialize, Deserialize, PartialEq)]
 pub struct User {
@@ -68,11 +64,7 @@ pub struct UserPatchPayload {
 }
 
 impl UserPatchPayload {
-    pub async fn update_user(
-        self,
-        db: &SqlitePool,
-        user: AuthenticatedUser,
-    ) -> Result<User, AppError> {
+    pub async fn update_user(self, db: &SqlitePool, user_id: u32) -> Result<User, AppError> {
         sqlx::query_as(
             "
             UPDATE user SET about = ? WHERE id = ?
@@ -80,7 +72,7 @@ impl UserPatchPayload {
             ",
         )
         .bind(self.about)
-        .bind(user.id)
+        .bind(user_id)
         .fetch_optional(db)
         .await?
         .ok_or(AppError::NotFound)

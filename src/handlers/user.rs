@@ -23,7 +23,7 @@ impl UserHandler {
         State(db): State<SqlitePool>,
     ) -> Result<Json<UserProfilePayload>, AppError> {
         match user_id_or_name.parse::<u32>() {
-            Ok(id) => Ok(Json(dbg!(UserProfilePayload::get_by_id(&db, id).await)?)),
+            Ok(id) => Ok(Json(UserProfilePayload::get_by_id(&db, id).await?)),
             Err(_) => Ok(Json(
                 UserProfilePayload::get_by_username(&db, user_id_or_name).await?,
             )),
@@ -40,6 +40,6 @@ impl UserHandler {
             return Err(AppError::Forbidden);
         }
 
-        Ok(Json(payload.update_user(&db, authenticated_user).await?))
+        Ok(Json(payload.update_user(&db, authenticated_user.id).await?))
     }
 }
