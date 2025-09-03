@@ -3,7 +3,7 @@
 	import { browser } from '$app/environment';
 	import { onMount } from 'svelte';
 	import type { Query } from '@tanstack/svelte-query';
-	import Modal from '$lib/components/Modal.svelte';
+	import ImageChangeModal from '$lib/components/ImageChangeModal.svelte';
 
 	let editImageModal: any;
 
@@ -18,6 +18,4 @@
 			 alt="Profile">
 </button>
 
-<Modal title="Edit Profile Image" bind:this={editImageModal}>
-	<img class="size-20 rounded-xl" src="https://zpi.zeus.gent/image/{userId}" alt="Preview" />
-</Modal>
+<ImageChangeModal {userId} bind:this={editImageModal} />

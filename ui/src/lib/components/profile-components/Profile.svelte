@@ -26,7 +26,7 @@
 
 {#if $query.isSuccess}
 	<div class="grid grid-cols-1 md:grid-cols-4 gap-8 w-4/5 justify-center m-auto items-end">
-		<div class="md:col-1">
+		<div class="md:col-1 flex justify-center">
 			<ProfileImage {userId} />
 		</div>
 		<div class="md:col-start-2 md:col-span-3">
