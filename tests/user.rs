@@ -1,10 +1,9 @@
-use axum::body::to_bytes;
 use database::models::user::{User, UserPatchPayload, UserProfile};
 use reqwest::StatusCode;
 use sqlx::SqlitePool;
 use zpi::handlers::AuthenticatedUser;
 
-use crate::common::AuthenticatedRouter;
+use crate::common::{AuthenticatedRouter, IntoStruct};
 
 mod common;
 
@@ -15,10 +14,7 @@ async fn get_users_me(db_pool: SqlitePool) {
 
     assert_eq!(response.status(), StatusCode::OK);
 
-    let body = response.into_body();
-    let user_response: AuthenticatedUser =
-        serde_json::from_slice(&to_bytes(body, usize::MAX).await.unwrap())
-            .expect("response should be valid json");
+    let user_response: AuthenticatedUser = response.into_struct().await;
 
     assert_eq!(
         user_response,
@@ -39,9 +35,7 @@ async fn patch_user(db_pool: SqlitePool) {
 
     assert_eq!(response.status(), StatusCode::OK);
 
-    let body = response.into_body();
-    let user_response: User = serde_json::from_slice(&to_bytes(body, 1000).await.unwrap())
-        .expect("response should be valid json");
+    let user_response: User = response.into_struct().await;
 
     assert_eq!(
         user_response,
@@ -60,9 +54,7 @@ async fn get_profile_by_id(db_pool: SqlitePool) {
 
     assert_eq!(response.status(), StatusCode::OK);
 
-    let body = response.into_body();
-    let user_response: UserProfile = serde_json::from_slice(&to_bytes(body, 1000).await.unwrap())
-        .expect("response should be valid json");
+    let user_response: UserProfile = response.into_struct().await;
 
     assert_eq!(
         user_response,
@@ -93,9 +85,7 @@ async fn get_profile_by_name(db_pool: SqlitePool) {
 
     assert_eq!(response.status(), StatusCode::OK);
 
-    let body = response.into_body();
-    let user_response: UserProfile = serde_json::from_slice(&to_bytes(body, 1000).await.unwrap())
-        .expect("response should be valid json");
+    let user_response: UserProfile = response.into_struct().await;
 
     assert_eq!(
         user_response,

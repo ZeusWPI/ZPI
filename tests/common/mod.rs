@@ -2,16 +2,13 @@ use std::sync::Arc;
 
 use axum::{
     Json, Router,
-    body::Body,
+    body::{Body, to_bytes},
     http::{Request, Response},
     response::IntoResponse,
 };
-use database::{
-    Database,
-    models::user::{User},
-};
+use database::{Database, models::user::User};
 use reqwest::header;
-use serde::Serialize;
+use serde::{Serialize, de::DeserializeOwned};
 use sqlx::SqlitePool;
 use tower::ServiceExt;
 use tower_sessions::{MemoryStore, Session, SessionManagerLayer, session::Id};
@@ -93,5 +90,26 @@ impl AuthenticatedRouter {
             )
             .await
             .unwrap()
+    }
+}
+
+pub trait IntoStruct {
+    async fn into_struct<T>(self) -> T
+    where
+        T: DeserializeOwned + Send;
+}
+
+impl IntoStruct for Response<Body> {
+    async fn into_struct<T>(self) -> T
+    where
+        T: DeserializeOwned + Send,
+    {
+        let body = self.into_body();
+
+        let bytes = to_bytes(body, usize::MAX)
+            .await
+            .expect("failed to read response body");
+
+        serde_json::from_slice(&bytes).expect("response should be valid json")
     }
 }
