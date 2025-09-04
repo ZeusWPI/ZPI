@@ -30,15 +30,7 @@
 
 </script>
 
-{#if $query.isError}
-
-	<h1>Oops, This Profile Could Not Be Found</h1>
-
-{:else if $query.isLoading}
-
-	<h1>Profile loading...</h1>
-
-{:else if $query.isSuccess}
+{#if $query.isSuccess}
 	<div class="grid grid-cols-1 md:grid-cols-4 gap-8 w-4/5 justify-center m-auto items-end">
 		<div class="md:col-1 flex justify-center">
 			<ProfileImage userId={$query.data.id} {editAllowed} />
@@ -56,5 +48,14 @@
 			<ShowcaseDisplay />
 		</div>
 	</div>
+
+{:else if $query.isLoading}
+	<h1 class="flex flex-row justify-center items-center text-center grow text-5xl">
+		Fetching Profile...
+	</h1>
+{:else}
+	<h1 class="flex flex-row justify-center items-center text-center grow text-5xl">
+		Something went wrong, couldn't fetch profile
+	</h1>
 {/if}
 
