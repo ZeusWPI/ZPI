@@ -6,6 +6,20 @@ use crate::{
     repos::tag::TagRepo,
 };
 
+pub enum UserId {
+    Username(String),
+    Id(u32),
+}
+
+impl UserId {
+    pub fn new(user_id_or_name: String) -> Self {
+        match user_id_or_name.parse::<u32>() {
+            Ok(id) => Self::Id(id),
+            Err(_) => Self::Username(user_id_or_name),
+        }
+    }
+}
+
 pub struct UserRepo<'a> {
     db: &'a SqlitePool,
 }
@@ -47,23 +61,11 @@ impl<'a> UserRepo<'a> {
         .ok_or(DatabaseError::NotFound)
     }
 
-    pub async fn profile_by_id(&self, id: u32) -> Result<UserProfile, DatabaseError> {
-        let user = self.by_id(id).await?;
-        let tags = TagRepo::new(self.db).for_user(user.id).await?;
-
-        Ok(UserProfile {
-            id: user.id,
-            username: user.username,
-            about: user.about,
-            tags,
-        })
-    }
-
-    pub async fn profile_by_username(
-        &self,
-        username: String,
-    ) -> Result<UserProfile, DatabaseError> {
-        let user = self.by_username(username).await?;
+    pub async fn profile(&self, user_id: UserId) -> Result<UserProfile, DatabaseError> {
+        let user = match user_id {
+            UserId::Username(username) => self.by_username(username).await?,
+            UserId::Id(id) => self.by_id(id).await?,
+        };
         let tags = TagRepo::new(self.db).for_user(user.id).await?;
 
         Ok(UserProfile {
