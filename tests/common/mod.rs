@@ -16,8 +16,6 @@ use tower::ServiceExt;
 use tower_sessions::{MemoryStore, Session, SessionManagerLayer, session::Id};
 use zpi::{AppState, api_router, config::AppConfig};
 
-pub mod to_struct;
-
 pub struct AuthenticatedRouter {
     router: Router,
     cookie: String,
