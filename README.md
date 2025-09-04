@@ -40,6 +40,7 @@ see [env example](./.env.example) for an example
 | `MAGICK_PATH` | path where the `magick` binary is located |
 | `DATABASE_URL` | path to the sqlite database file |
 | `LOG_LEVEL` | log level |
+| `FRONTEND_URL` | url the fronted |
 
 # Development
 
