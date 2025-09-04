@@ -1,5 +1,5 @@
 #![allow(dead_code)]
-use std::sync::Arc;
+use std::{path::PathBuf, sync::Arc};
 
 use axum::{
     Json, Router,
@@ -46,7 +46,8 @@ impl AuthenticatedRouter {
             .with_secure(false)
             .with_same_site(tower_sessions::cookie::SameSite::Lax);
 
-        let config = AppConfig::load().unwrap();
+        let mut config = AppConfig::load().unwrap();
+        config.image_path = PathBuf::from("./tests/test_images");
 
         let state = AppState {
             db: Database::new(db),
@@ -107,7 +108,8 @@ impl UnauthenticatedRouter {
             .with_secure(false)
             .with_same_site(tower_sessions::cookie::SameSite::Lax);
 
-        let config = AppConfig::load().unwrap();
+        let mut config = AppConfig::load().unwrap();
+        config.image_path = PathBuf::from("./tests/test_images");
 
         let state = AppState {
             db: Database::new(db),
