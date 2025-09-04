@@ -1,5 +1,3 @@
-use std::usize;
-
 use axum::{Json, body::to_bytes};
 use database::models::user::{User, UserPatchPayload, UserProfile};
 use reqwest::StatusCode;

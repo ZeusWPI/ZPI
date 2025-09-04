@@ -1,10 +1,10 @@
 use axum::{
     Router,
-    extract::{Query, State},
+    extract::Query,
     response::{IntoResponse, Redirect},
     routing::get,
 };
-use database::models::user::UserCreatePayload;
+use database::{Database, models::user::UserCreatePayload};
 use rand::distr::{Alphanumeric, SampleString};
 use serde::{Deserialize, Serialize};
 use tower_sessions::Session;
@@ -34,15 +34,16 @@ impl AuthHandler {
         )))
     }
 
-    async fn logout(session: Session, State(state): State<AppState>) -> impl IntoResponse {
+    async fn logout(session: Session, config: AppConfig) -> impl IntoResponse {
         session.clear().await;
-        Redirect::to(&state.config.frontend_url)
+        Redirect::to(&config.frontend_url)
     }
 
     async fn callback(
         Query(params): Query<Callback>,
         session: Session,
-        State(state): State<AppState>,
+        config: AppConfig,
+        db: Database,
     ) -> Result<Redirect, AppError> {
         let zauth_state = match session.get::<String>("state").await? {
             None => return Ok(Redirect::to("/login")),
@@ -58,16 +59,13 @@ impl AuthHandler {
         let form = [
             ("grant_type", "authorization_code"),
             ("code", &params.code),
-            ("redirect_uri", &state.config.zauth_callback),
+            ("redirect_uri", &config.zauth_callback),
         ];
 
         // get token from zauth with code
         let token = client
-            .post(format!("{}/oauth/token", state.config.zauth_url.as_str()))
-            .basic_auth(
-                state.config.zauth_client_id,
-                Some(state.config.zauth_client_secret),
-            )
+            .post(format!("{}/oauth/token", config.zauth_url.as_str()))
+            .basic_auth(config.zauth_client_id, Some(config.zauth_client_secret))
             .form(&form)
             .send()
             .await?
@@ -76,7 +74,7 @@ impl AuthHandler {
 
         // get user info from zauth
         let zauth_user = client
-            .get(format!("{}/current_user", state.config.zauth_url))
+            .get(format!("{}/current_user", config.zauth_url))
             .header("Authorization", "Bearer ".to_owned() + &token.access_token)
             .send()
             .await?
@@ -84,13 +82,13 @@ impl AuthHandler {
             .json::<ZauthUser>()
             .await?;
 
-        let user = state.db.users().create(zauth_user.into()).await?;
+        let user = db.users().create(zauth_user.into()).await?;
 
         session.clear().await;
         session
             .insert("user", AuthenticatedUser::from(user))
             .await?;
-        Ok(Redirect::to(&state.config.frontend_url))
+        Ok(Redirect::to(&config.frontend_url))
     }
 }
 
