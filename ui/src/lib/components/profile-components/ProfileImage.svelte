@@ -2,6 +2,7 @@
 
 	import ImageChangeModal from '$lib/components/ImageChangeModal.svelte';
 	import PencilIcon from '$lib/components/icons/PencilIcon.svelte';
+	import { PUBLIC_BACKEND_URL } from '$env/static/public';
 
 
 	let editImageModal: any;
@@ -13,7 +14,7 @@
 <div class="relative size-56 m-6 mx-auto mb-2">
 	<button class="cursor-pointer" onclick={() => editImageModal.open()}>
 		<img class="size-56 md:object-contain rounded-4xl"
-				 src="http://localhost:3000/api/image/{userId}"
+				 src="{PUBLIC_BACKEND_URL}/api/image/{userId}"
 				 alt="Profile">
 		<!-- Overlay Icon -->
 		<span class="size-10 p-2 bg-orange-200 text-orange-900 -bottom-2 -right-2 aspect-square rounded-full absolute">

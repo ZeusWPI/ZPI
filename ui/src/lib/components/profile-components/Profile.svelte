@@ -2,11 +2,10 @@
 	import ProfileSidebar from '$lib/components/profile-components/ProfileSidebar.svelte';
 	import ProfileSummary from '$lib/components/profile-components/ProfileSummary.svelte';
 	import ShowcaseDisplay from '$lib/components/showcases/ShowcaseDisplay.svelte';
-	import Navbar from '$lib/components/Navbar.svelte';
-	import Footer from '$lib/components/Footer.svelte';
 	import ProfileImage from '$lib/components/profile-components/ProfileImage.svelte';
 	import type { CreateQueryResult } from '@tanstack/svelte-query';
 	import { createQuery } from '@tanstack/svelte-query';
+	import { PUBLIC_BACKEND_URL } from '$env/static/public';
 
 	let { username } = $props();
 	let userId = 391;
@@ -15,7 +14,7 @@
 	query = createQuery({
 			queryKey: [`profile-${userId}`],
 			queryFn: async () => {
-				return fetch(`http://localhost:3000/api/users/${userId}`, {
+				return fetch(`${PUBLIC_BACKEND_URL}/api/users/${userId}`, {
 					credentials: 'include'
 				}).then((r) => r.json());
 			}

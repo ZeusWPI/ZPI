@@ -5,6 +5,7 @@
 	import type { CreateQueryResult } from '@tanstack/svelte-query';
 	import Navbar from '$lib/components/Navbar.svelte';
 	import Footer from '$lib/components/Footer.svelte';
+	import { PUBLIC_BACKEND_URL } from '$env/static/public';
 
 	type CurrentUser = {
 		id: number,
@@ -18,12 +19,12 @@
 	query = createQuery({
 			queryKey: ['currentUser'],
 			queryFn: async () => {
-				const response = await fetch('http://localhost:3000/api/users/me', {
+				const response = await fetch(`${PUBLIC_BACKEND_URL}/api/users/me`, {
 					credentials: 'include'
 				});
 				if (response.status === 401) {
 					console.log('Redirecting');
-					location.replace('http://localhost:3000/api/login');
+					location.replace(`${PUBLIC_BACKEND_URL}/api/login`);
 				}
 				return response.json();
 			}

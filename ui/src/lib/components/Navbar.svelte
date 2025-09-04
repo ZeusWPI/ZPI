@@ -1,6 +1,8 @@
 <script lang="ts">
 	import favicon from '$lib/assets/favicon.svg';
 	import logoutIcon from '$lib/assets/logout.svg';
+	import { PUBLIC_BACKEND_URL } from '$env/static/public';
+
 
 	let { username } = $props();
 </script>
@@ -15,7 +17,7 @@
 	<!-- Right Content -->
 	<div class="flex flex-row items-center">
 		<span class="text-lg">{username}</span>
-		<a href="http://localhost:3000/api/logout">
+		<a href="{PUBLIC_BACKEND_URL}/api/logout">
 			<img class="size-6 mx-2 invert" src={logoutIcon} alt="Logout" />
 		</a>
 	</div>
