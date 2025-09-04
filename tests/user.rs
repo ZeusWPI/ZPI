@@ -26,7 +26,7 @@ async fn get_users_me(db_pool: SqlitePool) {
 }
 
 #[sqlx::test]
-async fn users_me_authenticated(db_pool: SqlitePool) {
+async fn users_me_unauthenticated(db_pool: SqlitePool) {
     let router = UnauthenticatedRouter::new(db_pool).await;
     let response = router.get("/users/me").await;
 
@@ -76,7 +76,7 @@ async fn get_profile_by_id(db_pool: SqlitePool) {
 }
 
 #[sqlx::test]
-async fn get_profile_by_id_authenticated(db_pool: SqlitePool) {
+async fn get_profile_by_id_unauthenticated(db_pool: SqlitePool) {
     let router = UnauthenticatedRouter::new(db_pool).await;
     let response = router.get("/users/1").await;
 
