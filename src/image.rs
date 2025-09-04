@@ -216,7 +216,6 @@ fn make_placeholder(user_id: u32) -> Result<Body, AppError> {
 
     let defs = Definitions::new().add(cube_group);
 
-    // TODO randomize rotation
     let mut main_group = Group::new().set("transform", "rotate(0 32 32)");
 
     let use_data = vec![
