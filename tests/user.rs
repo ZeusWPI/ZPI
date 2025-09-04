@@ -3,7 +3,7 @@ use reqwest::StatusCode;
 use sqlx::SqlitePool;
 use zpi::handlers::AuthenticatedUser;
 
-use crate::common::{AuthenticatedRouter, IntoStruct};
+use crate::common::{AuthenticatedRouter, IntoStruct, UnauthenticatedRouter};
 
 mod common;
 
@@ -23,6 +23,14 @@ async fn get_users_me(db_pool: SqlitePool) {
             username: "cheese".into(),
         }
     );
+}
+
+#[sqlx::test]
+async fn users_me_authenticated(db_pool: SqlitePool) {
+    let router = UnauthenticatedRouter::new(db_pool).await;
+    let response = router.get("/users/me").await;
+
+    assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
 }
 
 #[sqlx::test(fixtures("user_1"))]

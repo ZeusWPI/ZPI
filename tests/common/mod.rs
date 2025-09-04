@@ -93,6 +93,42 @@ impl AuthenticatedRouter {
     }
 }
 
+pub struct UnauthenticatedRouter {
+    router: Router,
+}
+
+impl UnauthenticatedRouter {
+    pub async fn new(db: SqlitePool) -> Self {
+        let _ = dotenvy::dotenv();
+        let store = MemoryStore::default();
+
+        let session_layer = SessionManagerLayer::new(store)
+            .with_secure(false)
+            .with_same_site(tower_sessions::cookie::SameSite::Lax);
+
+        let config = AppConfig::load().unwrap();
+
+        let state = AppState {
+            db: Database::new(db),
+            config,
+        };
+
+        Self {
+            router: api_router().layer(session_layer).with_state(state),
+        }
+    }
+
+    /// send a request to an endpoint on this router
+    ///
+    /// must have a leading "/"
+    pub async fn get(self, path: &str) -> Response<Body> {
+        self.router
+            .oneshot(Request::builder().uri(path).body(Body::empty()).unwrap())
+            .await
+            .unwrap()
+    }
+}
+
 pub trait IntoStruct {
     async fn into_struct<T>(self) -> T
     where
