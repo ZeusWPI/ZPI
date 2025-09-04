@@ -12,7 +12,6 @@
 		mattermost: 'caturn'
 	};
 
-
 	const tags = [{ 'label': 'Bestuur', 'color': '255, 128, 0' }, { 'label': 'Sysadmin', 'color': '255, 0, 0' }];
 </script>
 
@@ -35,7 +34,7 @@
 
 	<!-- Tags -->
 	<div>
-		{#each tags as tag}
+		{#each user.tags as tag}
 			<ProfileTag {tag} />
 		{/each}
 	</div>

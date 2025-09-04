@@ -1,10 +1,18 @@
-<script>
+<script lang="ts">
 	let { tag } = $props();
+
+	let tagTypeColors = new Map([
+		["bestuur", "255, 128, 0"],
+		["bestuursfunctie", '255, 0, 0'],
+		["topper", "0, 180, 0"]
+	])
+
+	const getColor = (tagType:string) => tagTypeColors.get(tagType) || "160, 160, 160"
 </script>
 
 
-<span class="border-2 rounded-2xl px-3 mx-1 inline-block" style="--color: {tag.color};">
-	{tag.label}
+<span class="border-2 rounded-2xl px-3 mx-1 inline-block" style="--color: {getColor(tag.type)};">
+	{tag.name}
 </span>
 
 <style>
