@@ -8,9 +8,10 @@ use axum::{
 };
 use database::{
     Database,
-    models::user::{User, UserPatchPayload},
+    models::user::{User},
 };
 use reqwest::header;
+use serde::Serialize;
 use sqlx::SqlitePool;
 use tower::ServiceExt;
 use tower_sessions::{MemoryStore, Session, SessionManagerLayer, session::Id};
@@ -76,11 +77,10 @@ impl AuthenticatedRouter {
             .unwrap()
     }
 
-    // TODO methode generiek maken
     /// send a patch request to an endpoint on this router
     ///
     /// must have a leading "/"
-    pub async fn patch(self, path: &str, body: Json<UserPatchPayload>) -> Response<Body> {
+    pub async fn patch<T: Serialize>(self, path: &str, body: T) -> Response<Body> {
         self.router
             .oneshot(
                 Request::builder()
@@ -88,7 +88,7 @@ impl AuthenticatedRouter {
                     .uri(path)
                     .header(header::COOKIE, &self.cookie)
                     .header(header::CONTENT_TYPE, mime::APPLICATION_JSON.as_ref())
-                    .body(body.into_response().into_body())
+                    .body(Json(body).into_response().into_body())
                     .unwrap(),
             )
             .await
