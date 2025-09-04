@@ -3,6 +3,7 @@ use axum::{Json, Router, routing::get};
 use database::Database;
 use database::models::user::UserProfile;
 use database::models::user::{User, UserPatchPayload};
+use database::repos::user::UserId;
 
 use crate::AppState;
 use crate::{error::AppError, handlers::AuthenticatedUser};
@@ -24,10 +25,9 @@ impl UserHandler {
         Path(user_id_or_name): Path<String>,
         db: Database,
     ) -> Result<Json<UserProfile>, AppError> {
-        match user_id_or_name.parse::<u32>() {
-            Ok(id) => Ok(Json(db.users().profile_by_id(id).await?)),
-            Err(_) => Ok(Json(db.users().profile_by_username(user_id_or_name).await?)),
-        }
+        Ok(Json(
+            db.users().profile(UserId::new(user_id_or_name)).await?,
+        ))
     }
 
     async fn patch(
