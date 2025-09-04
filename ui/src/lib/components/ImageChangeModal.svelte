@@ -1,20 +1,13 @@
 <script lang="ts">
-	import { onMount } from 'svelte';
 	import { createDialog } from 'svelte-headlessui';
 	import Transition from 'svelte-transition';
+	import { PUBLIC_BACKEND_URL } from '$env/static/public';
 
 	let { userId } = $props();
 
 	const dialog = createDialog({ label: 'Change Profile Image' });
 
-	export function close() {
-		dialog.close();
-	}
 
-	export function open() {
-		dialog.open();
-	}
-	
 	let loadFile = function(event: any) {
 		let previewImage = document.getElementById('previewImg') as HTMLImageElement;
 		previewImage.src = URL.createObjectURL(event.target.files[0]);
@@ -25,14 +18,14 @@
 	};
 
 	function resetImage() {
-		fetch('http://localhost:3000/api/image', {
+		fetch(`${PUBLIC_BACKEND_URL}/api/image`, {
 			method: 'DELETE',
 			credentials: 'include'
 		}).then(() => location.reload());
 	}
 
 	function uploadImage() {
-		fetch('http://localhost:3000/api/image', {
+		fetch(`${PUBLIC_BACKEND_URL}/api/image`, {
 			method: 'POST',
 			headers: {},
 			body: (document.getElementById('file-upload') as HTMLInputElement).files?.[0],
@@ -70,7 +63,7 @@
 					>
 						<h3 class="text-lg leading-6 font-medium text-gray-900">Change Profile Image</h3>
 						<div class="mt-2 flex flex-row justify-center">
-							<img id="previewImg" class="size-32 rounded-xl m-7" src="http://localhost:3000/api/image/{userId}"
+							<img id="previewImg" class="size-32 rounded-xl m-7" src="{PUBLIC_BACKEND_URL}/api/image/{userId}"
 									 alt="Preview">
 							<div class="flex flex-col justify-center">
 								<label

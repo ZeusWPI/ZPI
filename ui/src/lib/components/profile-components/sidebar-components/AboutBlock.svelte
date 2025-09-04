@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { PUBLIC_BACKEND_URL } from '$env/static/public';
 
 	let editMode = $state(false);
 
@@ -10,7 +11,7 @@
 
 	async function editAbout() {
 		const response = await fetch(
-			`http://localhost:3000/api/users/${userId}`,
+			`${PUBLIC_BACKEND_URL}/api/users/${userId}`,
 			{
 				credentials: 'include',
 				method: 'PATCH',
