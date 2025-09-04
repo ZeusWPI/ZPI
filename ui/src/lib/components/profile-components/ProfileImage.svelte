@@ -17,7 +17,8 @@
 				 src="{PUBLIC_BACKEND_URL}/api/image/{userId}"
 				 alt="Profile">
 		<!-- Overlay Icon -->
-		<span class="size-10 p-2 bg-orange-200 text-orange-900 -bottom-2 -right-2 aspect-square rounded-full absolute">
+		<span
+			class="size-10 p-2 bg-orange-200 hover:bg-orange-300 text-orange-900 -bottom-2 -right-2 aspect-square rounded-xl absolute">
 			<PencilIcon />
 		</span>
 	</button>
