@@ -7,7 +7,7 @@
 	import { createQuery } from '@tanstack/svelte-query';
 	import { PUBLIC_BACKEND_URL } from '$env/static/public';
 
-	let { username } = $props();
+	let { username, editAllowed = false } = $props();
 
 	type ProfileData = {
 		id: number,
@@ -41,7 +41,7 @@
 {:else if $query.isSuccess}
 	<div class="grid grid-cols-1 md:grid-cols-4 gap-8 w-4/5 justify-center m-auto items-end">
 		<div class="md:col-1 flex justify-center">
-			<ProfileImage userId={$query.data.id} />
+			<ProfileImage userId={$query.data.id} {editAllowed} />
 		</div>
 		<div class="md:col-start-2 md:col-span-3">
 			<ProfileSummary user={$query.data} />
@@ -50,7 +50,7 @@
 	<div class="grid grid-cols-1 md:grid-cols-4 gap-8 w-4/5 items-start justify-center m-auto">
 
 		<div class="md:col-1">
-			<ProfileSidebar user={$query.data} />
+			<ProfileSidebar user={$query.data} {editAllowed} />
 		</div>
 		<div class="md:col-start-2 md:col-span-3">
 			<ShowcaseDisplay />
