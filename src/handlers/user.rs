@@ -1,4 +1,4 @@
-use axum::extract::{Path, State};
+use axum::extract::Path;
 use axum::{Json, Router, routing::get};
 use database::Database;
 use database::models::user::UserProfile;
@@ -33,13 +33,13 @@ impl UserHandler {
     async fn patch(
         Path(user_id): Path<u32>,
         authenticated_user: AuthenticatedUser,
-        State(state): State<AppState>,
+        db: Database,
         Json(payload): Json<UserPatchPayload>,
     ) -> Result<Json<User>, AppError> {
         if user_id != authenticated_user.id {
             return Err(AppError::Forbidden);
         }
 
-        Ok(Json(state.db.users().patch(user_id, payload).await?))
+        Ok(Json(db.users().patch(user_id, payload).await?))
     }
 }

@@ -7,7 +7,7 @@ use std::{
 use axum::{
     Router,
     body::{Body, Bytes, to_bytes},
-    extract::{Path, Query, State},
+    extract::{Path, Query},
     response::{IntoResponse, Response},
     routing::{get, post},
 };
@@ -16,7 +16,9 @@ use headers::{ETag, IfNoneMatch};
 use reqwest::{StatusCode, header::ETAG};
 use serde::Deserialize;
 
-use crate::{AppState, error::AppError, handlers::AuthenticatedUser, image::ProfileImage};
+use crate::{
+    AppState, config::AppConfig, error::AppError, handlers::AuthenticatedUser, image::ProfileImage,
+};
 
 static SIZES: &[u32] = &[64, 128, 256, 512];
 static MAX_SIZE: u32 = 512;
@@ -34,7 +36,7 @@ impl ImageHandler {
         Query(params): Query<GetImageQuery>,
         Path(user_id): Path<u32>,
         if_none_match: Option<TypedHeader<IfNoneMatch>>,
-        State(state): State<AppState>,
+        config: AppConfig,
     ) -> Result<Response, AppError> {
         // default size
         let requested_size = params.size.unwrap_or(256);
@@ -45,7 +47,7 @@ impl ImageHandler {
             .min()
             .unwrap_or(&MAX_SIZE);
 
-        let profile = ProfileImage::new(user_id, state.config);
+        let profile = ProfileImage::new(user_id, config);
         let etag_opt = file_modified_etag(&profile.path(size)).await?;
 
         // return early if etag matches
@@ -72,12 +74,12 @@ impl ImageHandler {
 
     pub async fn post(
         user: AuthenticatedUser,
-        State(state): State<AppState>,
+        config: AppConfig,
         body: Body,
     ) -> Result<StatusCode, AppError> {
         let data: Bytes = to_bytes(body, usize::MAX).await?;
 
-        ProfileImage::new(user.id, state.config)
+        ProfileImage::new(user.id, config)
             .with_data(&data)
             .await?
             .save_sizes(SIZES)
@@ -88,9 +90,9 @@ impl ImageHandler {
 
     pub async fn delete(
         user: AuthenticatedUser,
-        State(state): State<AppState>,
+        config: AppConfig,
     ) -> Result<StatusCode, AppError> {
-        let profile = ProfileImage::new(user.id, state.config);
+        let profile = ProfileImage::new(user.id, config);
         for size in SIZES {
             if let Err(e) = tokio::fs::remove_file(profile.path(*size)).await
                 && e.kind() != NotFound
