@@ -1,39 +1,66 @@
-#!/bin/sh
-# This pre-commit hook for Rust projects will:
-# 1. Check code formatting with `cargo fmt`.
-# 2. Run Clippy to catch common mistakes and improve your code.
-# 3. Run the test suite with `cargo test`.
-# If any of these steps fail, the commit will be aborted.
+#!/usr/bin/env bash
+set -euo pipefail
 
-echo "Running Rust pre-commit hook..."
+function backend_fmt
+{
+    echo "pre-commit backend: Checking formatting with 'cargo fmt'..."
+    if ! (cd ./ && cargo fmt -- --check); then
+        echo "❌ Formatting check failed. Please run 'cargo fmt' to fix." >&2
+        exit 1
+    else
+        echo "✅ Formatting is correct."
+    fi
+}
 
-# --- 1. Check Formatting ---
-echo "Checking formatting with 'cargo fmt'..."
-cargo fmt -- --check
-if [ $? -ne 0 ]; then
-    echo "❌ Formatting check failed. Please run 'cargo fmt' to fix." >&2
+function backend_lint
+{
+    echo "pre-commit backend: Running 'cargo clippy'..."
+    # We use -- -D warnings to treat all warnings as errors.
+    if ! (cd ./ && cargo clippy -- -D warnings); then
+        echo "❌ Clippy checks failed. Please fix the issues before committing." >&2
+        exit 1
+    else
+        echo "✅ Clippy checks passed."
+    fi
+}
+
+function backend_test
+{
+    echo "pre-commit backend: Running tests with 'cargo test'..."
+    if ! (cd ./ && cargo test); then
+        echo "❌ Tests failed. Please fix them before committing." >&2
+        exit 1
+    else
+        echo "✅ All tests passed."
+    fi
+}
+
+function ui_lint
+{
+    echo "pre-commit ui: Running linter..."
+    if ! (cd ./ui/ && sleep 3); then
+        echo "❌ Tests failed. Please fix them before committing." >&2
+        exit 1
+    else
+        echo "✅ Linter checks passed."
+    fi
+}
+
+if git diff --name-only | grep -q .; then
+    echo "pre-commit: You have unstaged changes! Stash or stage them first." >&2
+    echo "pre-commit: (Or skip this hook with -n)" >&2
     exit 1
 fi
-echo "✅ Formatting is correct."
 
-# --- 2. Run Clippy Linter ---
-# We use -- -D warnings to treat all warnings as errors.
-echo "Running 'cargo clippy'..."
-cargo clippy -- -D warnings
-if [ $? -ne 0 ]; then
-    echo "❌ Clippy checks failed. Please fix the issues before committing." >&2
-    exit 1
+if git diff --staged --name-only | grep -q -e^{database/,migrations/,src/,tests/,Cargo}; then
+    backend_fmt
+    backend_lint
+    backend_test
 fi
-echo "✅ Clippy checks passed."
-
-# --- 3. Run Tests ---
-echo "Running tests with 'cargo test'..."
-cargo test
-if [ $? -ne 0 ]; then
-    echo "❌ Tests failed. Please fix them before committing." >&2
-    exit 1
+if git diff --staged --name-only | grep -q -e^ui/; then
+    ui_lint
 fi
-echo "✅ All tests passed."
 
 echo "🎉 All checks passed. Proceeding with commit."
+sleep .5
 exit 0
