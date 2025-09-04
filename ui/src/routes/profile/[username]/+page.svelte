@@ -17,7 +17,7 @@
 	let query: CreateQueryResult<CurrentUser>;
 
 	query = createQuery({
-			queryKey: ['currentUser'],
+			queryKey: [`currentUser`],
 			queryFn: async () => {
 				const response = await fetch(`${PUBLIC_BACKEND_URL}/api/users/me`, {
 					credentials: 'include'
