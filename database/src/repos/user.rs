@@ -2,23 +2,9 @@ use sqlx::SqlitePool;
 
 use crate::{
     error::DatabaseError,
-    models::user::{User, UserCreatePayload, UserPatchPayload, UserProfile},
+    models::user::{User, UserCreatePayload, UserId, UserPatchPayload, UserProfile},
     repos::tag::TagRepo,
 };
-
-pub enum UserId {
-    Username(String),
-    Id(u32),
-}
-
-impl UserId {
-    pub fn new(user_id_or_name: String) -> Self {
-        match user_id_or_name.parse::<u32>() {
-            Ok(id) => Self::Id(id),
-            Err(_) => Self::Username(user_id_or_name),
-        }
-    }
-}
 
 pub struct UserRepo<'a> {
     db: &'a SqlitePool,
