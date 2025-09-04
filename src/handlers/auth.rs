@@ -9,7 +9,7 @@ use rand::distr::{Alphanumeric, SampleString};
 use serde::{Deserialize, Serialize};
 use tower_sessions::Session;
 
-use crate::{AppState, error::AppError, handlers::AuthenticatedUser};
+use crate::{config::AppConfig, error::AppError, handlers::AuthenticatedUser, AppState};
 
 pub struct AuthHandler;
 
@@ -21,14 +21,14 @@ impl AuthHandler {
             .route("/logout", get(Self::logout))
     }
 
-    async fn login(session: Session, State(state): State<AppState>) -> Result<Redirect, AppError> {
+    async fn login(session: Session, config: AppConfig) -> Result<Redirect, AppError> {
         let zauth_state = Alphanumeric.sample_string(&mut rand::rng(), 16);
         // insert state so we can check it in the callback
         session.insert("state", zauth_state.clone()).await?;
         // redirect to zauth to authenticate
-        let zauth_url = state.config.zauth_url.to_string();
-        let callback_url = state.config.zauth_callback.to_string();
-        let zauth_client_id = state.config.zauth_client_id.to_string();
+        let zauth_url = config.zauth_url.to_string();
+        let callback_url = config.zauth_callback.to_string();
+        let zauth_client_id = config.zauth_client_id.to_string();
         Ok(Redirect::to(&format!(
             "{zauth_url}/oauth/authorize?client_id={zauth_client_id}&response_type=code&state={zauth_state}&redirect_uri={callback_url}"
         )))

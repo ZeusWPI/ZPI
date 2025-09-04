@@ -1,5 +1,6 @@
 use axum::extract::{Path, State};
 use axum::{Json, Router, routing::get};
+use database::Database;
 use database::models::user::UserProfile;
 use database::models::user::{User, UserPatchPayload};
 
@@ -21,17 +22,11 @@ impl UserHandler {
 
     async fn profile(
         Path(user_id_or_name): Path<String>,
-        State(state): State<AppState>,
+        db: Database,
     ) -> Result<Json<UserProfile>, AppError> {
         match user_id_or_name.parse::<u32>() {
-            Ok(id) => Ok(Json(state.db.users().profile_by_id(id).await?)),
-            Err(_) => Ok(Json(
-                state
-                    .db
-                    .users()
-                    .profile_by_username(user_id_or_name)
-                    .await?,
-            )),
+            Ok(id) => Ok(Json(db.users().profile_by_id(id).await?)),
+            Err(_) => Ok(Json(db.users().profile_by_username(user_id_or_name).await?)),
         }
     }
 
