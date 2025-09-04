@@ -9,7 +9,7 @@ use rand::distr::{Alphanumeric, SampleString};
 use serde::{Deserialize, Serialize};
 use tower_sessions::Session;
 
-use crate::{config::AppConfig, error::AppError, handlers::AuthenticatedUser, AppState};
+use crate::{AppState, config::AppConfig, error::AppError, handlers::AuthenticatedUser};
 
 pub struct AuthHandler;
 
@@ -26,9 +26,9 @@ impl AuthHandler {
         // insert state so we can check it in the callback
         session.insert("state", zauth_state.clone()).await?;
         // redirect to zauth to authenticate
-        let zauth_url = config.zauth_url.to_string();
-        let callback_url = config.zauth_callback.to_string();
-        let zauth_client_id = config.zauth_client_id.to_string();
+        let zauth_url = config.zauth_url;
+        let callback_url = config.zauth_callback;
+        let zauth_client_id = config.zauth_client_id;
         Ok(Redirect::to(&format!(
             "{zauth_url}/oauth/authorize?client_id={zauth_client_id}&response_type=code&state={zauth_state}&redirect_uri={callback_url}"
         )))
