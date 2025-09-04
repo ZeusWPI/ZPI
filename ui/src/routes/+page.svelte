@@ -33,7 +33,7 @@
 	<div class="flex flex-col min-h-screen">
 		<Navbar username={$query.data.username} />
 
-		<Profile username="caturn" />
+		<Profile username={$query.data.username} />
 
 		<div class="grow"></div>
 		<div class="flex flex-row justify-center mt-5 mb-3">
