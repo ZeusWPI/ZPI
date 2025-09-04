@@ -27,3 +27,23 @@ pub struct UserProfile {
     pub about: String,
     pub tags: Vec<Tag>,
 }
+
+pub enum UserId {
+    Username(String),
+    Id(u32),
+}
+
+impl From<String> for UserId {
+    fn from(value: String) -> Self {
+        match value.parse::<u32>() {
+            Ok(id) => Self::Id(id),
+            Err(_) => Self::Username(value),
+        }
+    }
+}
+
+impl From<u32> for UserId {
+    fn from(value: u32) -> Self {
+        Self::Id(value)
+    }
+}
