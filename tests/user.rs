@@ -76,6 +76,14 @@ async fn get_profile_by_id(db_pool: SqlitePool) {
 }
 
 #[sqlx::test]
+async fn get_profile_by_id_authenticated(db_pool: SqlitePool) {
+    let router = UnauthenticatedRouter::new(db_pool).await;
+    let response = router.get("/users/1").await;
+
+    assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
+}
+
+#[sqlx::test]
 async fn get_profile_404(db_pool: SqlitePool) {
     let router = AuthenticatedRouter::new(db_pool.clone()).await;
     let response = router.get("/users/1").await;
