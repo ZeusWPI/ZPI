@@ -1,4 +1,4 @@
-use axum::{Json, body::to_bytes};
+use axum::body::to_bytes;
 use database::models::user::{User, UserPatchPayload, UserProfile};
 use reqwest::StatusCode;
 use sqlx::SqlitePool;
@@ -32,9 +32,9 @@ async fn get_users_me(db_pool: SqlitePool) {
 #[sqlx::test(fixtures("user_1"))]
 async fn patch_user(db_pool: SqlitePool) {
     let router = AuthenticatedRouter::new(db_pool).await;
-    let body = Json(UserPatchPayload {
+    let body = UserPatchPayload {
         about: "Changed about".to_string(),
-    });
+    };
     let response = router.patch("/users/1", body).await;
 
     assert_eq!(response.status(), StatusCode::OK);
