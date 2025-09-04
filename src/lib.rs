@@ -1,4 +1,9 @@
-use axum::{Router, extract::DefaultBodyLimit, routing::get};
+use axum::{
+    Router,
+    extract::DefaultBodyLimit,
+    middleware::from_extractor,
+    routing::{get, post},
+};
 use database::Database;
 use reqwest::StatusCode;
 use tokio::fs;
@@ -8,13 +13,14 @@ use tower_sessions::{MemoryStore, SessionManagerLayer, cookie::SameSite};
 use crate::{
     config::AppConfig,
     error::AppError,
-    handlers::{auth::AuthHandler, image::ImageHandler, user::UserHandler},
+    handlers::{AuthenticatedUser, auth::AuthHandler, image::ImageHandler, user::UserHandler},
 };
 
 pub mod config;
 pub mod error;
 pub mod handlers;
 pub mod image;
+pub mod middleware;
 
 #[derive(Clone)]
 pub struct AppState {
@@ -55,10 +61,27 @@ pub async fn start_app(config: AppConfig) -> Result<(), AppError> {
 
 pub fn api_router() -> Router<AppState> {
     Router::new()
-        .merge(AuthHandler::router())
-        .nest("/image", ImageHandler::router())
-        .nest("/users", UserHandler::router())
+        .merge(open_routes())
+        .merge(authenticated_routes())
         .fallback(get(|| async { StatusCode::NOT_FOUND }))
+}
+
+fn open_routes() -> Router<AppState> {
+    Router::new()
+        .route("/login", get(AuthHandler::login))
+        .route("/oauth/callback", get(AuthHandler::callback))
+        .route("/image/{id}", get(ImageHandler::get))
+}
+
+fn authenticated_routes() -> Router<AppState> {
+    Router::new()
+        .nest("/users", UserHandler::router())
+        .route("/logout", get(AuthHandler::logout))
+        .route(
+            "/image/",
+            post(ImageHandler::post).delete(ImageHandler::delete),
+        )
+        .route_layer(from_extractor::<AuthenticatedUser>())
 }
 
 #[allow(clippy::expect_used)]
