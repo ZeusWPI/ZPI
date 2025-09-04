@@ -17,7 +17,7 @@ impl<'a> TagRepo<'a> {
             FROM user_tag
                 INNER JOIN tag
                     ON user_tag.tag_id = tag.id AND user_tag.user_id = ?
-                INNER JOIN tag_type;
+                INNER JOIN tag_type ON tag.type = tag_type.id;
             ",
         )
         .bind(user_id)
