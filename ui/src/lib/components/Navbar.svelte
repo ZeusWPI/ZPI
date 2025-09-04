@@ -16,10 +16,12 @@
 	</div>
 	<!-- Right Content -->
 	<div class="flex flex-row items-center">
-		<span class="text-lg">{username}</span>
-		<a href="{PUBLIC_BACKEND_URL}/api/logout">
-			<img class="size-6 mx-2 invert" src={logoutIcon} alt="Logout" />
-		</a>
+		{#if username !== ""}
+			<span class="text-lg">{username}</span>
+			<a href="{PUBLIC_BACKEND_URL}/api/logout">
+				<img class="size-6 mx-2 invert" src={logoutIcon} alt="Logout" />
+			</a>
+		{/if}
 	</div>
 </div>
 

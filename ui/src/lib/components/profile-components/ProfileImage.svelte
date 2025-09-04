@@ -5,7 +5,7 @@
 	import { PUBLIC_BACKEND_URL } from '$env/static/public';
 
 
-	let editImageModal: any;
+	let editImageModal: any = $state();
 
 	let { userId, editAllowed } = $props();
 

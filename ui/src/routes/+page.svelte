@@ -28,18 +28,23 @@
 		}
 	);
 </script>
-{#if $query.isSuccess}
-
-	<div class="flex flex-col min-h-screen">
-		<Navbar username={$query.data.username} />
-
+<div class="flex flex-col min-h-screen">
+	<Navbar username={$query.data?.username || ""} />
+	{#if $query.isSuccess}
 		<Profile username={$query.data.username} editAllowed={true} />
-
 		<div class="grow"></div>
-		<div class="flex flex-row justify-center mt-5 mb-3">
-			<div class="w-5/6">
-				<Footer />
-			</div>
+	{:else if $query.isLoading}
+		<h1 class="flex flex-row justify-center items-center text-center grow text-5xl">
+			Hold on, we're checking if you're logged in...
+		</h1>
+	{:else}
+		<h1 class="flex flex-row justify-center items-center text-center grow text-5xl">
+			Something went wrong, couldn't reach backend
+		</h1>
+	{/if}
+	<div class="flex flex-row justify-center mt-5 mb-3">
+		<div class="w-5/6">
+			<Footer />
 		</div>
 	</div>
-{/if}
+</div>
