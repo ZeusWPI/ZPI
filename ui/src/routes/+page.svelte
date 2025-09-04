@@ -33,7 +33,7 @@
 	<div class="flex flex-col min-h-screen">
 		<Navbar username={$query.data.username} />
 
-		<Profile username={$query.data.username} />
+		<Profile username={$query.data.username} editAllowed={true} />
 
 		<div class="grow"></div>
 		<div class="flex flex-row justify-center mt-5 mb-3">

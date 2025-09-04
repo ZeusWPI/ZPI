@@ -4,7 +4,7 @@
 
 	let editMode = $state(false);
 
-	let { userDescription, userId } = $props();
+	let { userDescription, userId, editAllowed } = $props();
 
 	let currentDescription = $state(userDescription);
 
@@ -34,7 +34,7 @@
 </script>
 
 <span class="font-bold flex flex-row items-center">About
-	{#if !editMode}
+	{#if !editMode && editAllowed}
 	<button class="cursor-pointer rounded-md text-orange-900 bg-orange-200 hover:bg-orange-300 p-1 mx-2"
 					onclick="{() => editMode=true}">
 			<span class="flex justify-center items-center size-4">

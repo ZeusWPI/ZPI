@@ -7,21 +7,30 @@
 
 	let editImageModal: any;
 
-	let { userId } = $props();
+	let { userId, editAllowed } = $props();
 
 
 </script>
-<div class="relative size-56 m-6 mx-auto mb-2">
-	<button class="cursor-pointer" onclick={() => editImageModal.open()}>
+{#if editAllowed}
+	<div class="relative size-56 m-6 mx-auto mb-2">
+		<button class="cursor-pointer" onclick={() => editImageModal.open()}>
+			<img class="size-56 md:object-contain rounded-4xl"
+					 src="{PUBLIC_BACKEND_URL}/api/image/{userId}"
+					 alt="Profile">
+			<!-- Overlay Icon -->
+			<span
+				class="size-10 p-2 bg-orange-200 hover:bg-orange-300 text-orange-900 -bottom-2 -right-2 aspect-square rounded-xl absolute">
+			<PencilIcon />
+		</span>
+		</button>
+	</div>
+
+	<ImageChangeModal {userId} bind:this={editImageModal} />
+
+{:else}
+	<div class="relative size-56 m-6 mx-auto mb-2">
 		<img class="size-56 md:object-contain rounded-4xl"
 				 src="{PUBLIC_BACKEND_URL}/api/image/{userId}"
 				 alt="Profile">
-		<!-- Overlay Icon -->
-		<span
-			class="size-10 p-2 bg-orange-200 hover:bg-orange-300 text-orange-900 -bottom-2 -right-2 aspect-square rounded-xl absolute">
-			<PencilIcon />
-		</span>
-	</button>
-</div>
-
-<ImageChangeModal {userId} bind:this={editImageModal} />
+	</div>
+{/if}
