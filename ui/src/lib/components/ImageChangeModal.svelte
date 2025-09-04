@@ -7,6 +7,13 @@
 
 	const dialog = createDialog({ label: 'Change Profile Image' });
 
+	export function close() {
+		dialog.close();
+	}
+
+	export function open() {
+		dialog.open();
+	}
 
 	let loadFile = function(event: any) {
 		let previewImage = document.getElementById('previewImg') as HTMLImageElement;
