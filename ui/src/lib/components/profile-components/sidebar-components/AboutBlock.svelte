@@ -1,4 +1,5 @@
 <script lang="ts">
+	import PencilIcon from '$lib/components/icons/PencilIcon.svelte';
 	import { PUBLIC_BACKEND_URL } from '$env/static/public';
 
 	let editMode = $state(false);
@@ -32,8 +33,17 @@
 
 </script>
 
-<span class="font-bold">About</span>
-<br>
+<span class="font-bold flex flex-row items-center">About
+	{#if !editMode}
+	<button class="cursor-pointer rounded-md text-orange-900 bg-orange-200 hover:bg-orange-300 p-1 mx-2"
+					onclick="{() => editMode=true}">
+			<span class="flex justify-center items-center size-4">
+			 <PencilIcon />
+			</span>
+	</button>
+{/if}
+	</span>
+<!--<br>-->
 <div class="mb-6">
 	{#if editMode }
 		<form>
@@ -51,9 +61,5 @@
 		</form>
 	{:else }
 		<p class="mb-2">{currentDescription}</p>
-		<button class="cursor-pointer rounded-md text-orange-900 bg-orange-100 hover:bg-orange-200 py-0.5 px-3"
-						onclick="{() => editMode=true}">
-			Edit
-		</button>
 	{/if}
 </div>
