@@ -1,27 +1,18 @@
 use axum::{
-    Router,
     extract::Query,
     response::{IntoResponse, Redirect},
-    routing::get,
 };
 use database::{Database, models::user::UserCreatePayload};
 use rand::distr::{Alphanumeric, SampleString};
 use serde::{Deserialize, Serialize};
 use tower_sessions::Session;
 
-use crate::{AppState, config::AppConfig, error::AppError, handlers::AuthenticatedUser};
+use crate::{config::AppConfig, error::AppError, handlers::AuthenticatedUser};
 
 pub struct AuthHandler;
 
 impl AuthHandler {
-    pub fn router() -> Router<AppState> {
-        Router::new()
-            .route("/login", get(Self::login))
-            .route("/oauth/callback", get(Self::callback))
-            .route("/logout", get(Self::logout))
-    }
-
-    async fn login(session: Session, config: AppConfig) -> Result<Redirect, AppError> {
+    pub async fn login(session: Session, config: AppConfig) -> Result<Redirect, AppError> {
         let zauth_state = Alphanumeric.sample_string(&mut rand::rng(), 16);
         // insert state so we can check it in the callback
         session.insert("state", zauth_state.clone()).await?;
@@ -34,12 +25,12 @@ impl AuthHandler {
         )))
     }
 
-    async fn logout(session: Session, config: AppConfig) -> impl IntoResponse {
+    pub async fn logout(session: Session, config: AppConfig) -> impl IntoResponse {
         session.clear().await;
         Redirect::to(&config.frontend_url)
     }
 
-    async fn callback(
+    pub async fn callback(
         Query(params): Query<Callback>,
         session: Session,
         config: AppConfig,

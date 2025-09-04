@@ -5,20 +5,16 @@ use std::{
 };
 
 use axum::{
-    Router,
     body::{Body, Bytes, to_bytes},
     extract::{Path, Query},
     response::{IntoResponse, Response},
-    routing::{get, post},
 };
 use axum_extra::TypedHeader;
 use headers::{ETag, IfNoneMatch};
 use reqwest::{StatusCode, header::ETAG};
 use serde::Deserialize;
 
-use crate::{
-    AppState, config::AppConfig, error::AppError, handlers::AuthenticatedUser, image::ProfileImage,
-};
+use crate::{config::AppConfig, error::AppError, handlers::AuthenticatedUser, image::ProfileImage};
 
 static SIZES: &[u32] = &[64, 128, 256, 512];
 static MAX_SIZE: u32 = 512;
@@ -26,12 +22,6 @@ static MAX_SIZE: u32 = 512;
 pub struct ImageHandler;
 
 impl ImageHandler {
-    pub fn router() -> Router<AppState> {
-        Router::new()
-            .route("/", post(Self::post).delete(Self::delete))
-            .route("/{id}", get(Self::get))
-    }
-
     pub async fn get(
         Query(params): Query<GetImageQuery>,
         Path(user_id): Path<u32>,
