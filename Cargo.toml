@@ -3,6 +3,10 @@ name = "zpi"
 version = "1.3.1"
 edition = "2024"
 
+[[bin]]
+name = "zpi"
+path = "src/main.rs"
+
 [workspace]
 members = ["database"]
 
