@@ -1,9 +1,12 @@
-use axum::{extract::FromRequestParts, http::request::Parts};
-use database::models::user::User;
+use axum::{
+    extract::{FromRequestParts, State},
+    http::request::Parts,
+};
+use database::{Database, models::user::User};
 use serde::{Deserialize, Serialize};
 use tower_sessions::Session;
 
-use crate::error::AppError;
+use crate::{AppState, config::AppConfig, error::AppError};
 
 pub mod auth;
 pub mod image;
@@ -38,5 +41,34 @@ impl From<User> for AuthenticatedUser {
             id: user.id,
             username: user.username,
         }
+    }
+}
+
+impl FromRequestParts<AppState> for Database {
+    type Rejection = AppError;
+
+    async fn from_request_parts(
+        parts: &mut Parts,
+        state: &AppState,
+    ) -> Result<Database, Self::Rejection> {
+        let State(app_state) = State::<AppState>::from_request_parts(parts, state)
+            .await
+            .map_err(|_| AppError::Internal("Failed to extract app state".into()))?;
+
+        Ok(app_state.db)
+    }
+}
+
+impl FromRequestParts<AppState> for AppConfig {
+    type Rejection = AppError;
+
+    async fn from_request_parts(
+        parts: &mut Parts,
+        state: &AppState,
+    ) -> Result<AppConfig, Self::Rejection> {
+        let State(app_state) = State::<AppState>::from_request_parts(parts, state)
+            .await
+            .map_err(|_| AppError::Internal("Failed to extract app state".into()))?;
+        Ok(app_state.config)
     }
 }
