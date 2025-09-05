@@ -1,7 +1,7 @@
 use reqwest::StatusCode;
 use sqlx::SqlitePool;
 
-use crate::common::UnauthenticatedRouter;
+use crate::common::router::UnauthenticatedRouter;
 
 mod common;
 

@@ -3,8 +3,8 @@ use sqlx::prelude::FromRow;
 
 #[derive(Debug, FromRow, Deserialize, Serialize, PartialEq)]
 pub struct Tag {
-    id: u32,
-    name: String,
-    r#type: String,
-    description: Option<String>,
+    pub id: u32,
+    pub name: String,
+    pub category: String,
+    pub description: Option<String>,
 }
