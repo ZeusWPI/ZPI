@@ -1,4 +1,4 @@
-CREATE TABLE tag_type
+CREATE TABLE tag_category
 (
     id INTEGER PRIMARY KEY NOT NULL,
     name TEXT NOT NULL
@@ -9,9 +9,9 @@ CREATE TABLE tag
     id INTEGER PRIMARY KEY NOT NULL,
     name TEXT NOT NULL UNIQUE,
     description TEXT,
-    type INTEGER NOT NULL,
+    category INTEGER NOT NULL,
 
-    FOREIGN KEY (type) REFERENCES type (id)
+    FOREIGN KEY (category) REFERENCES tag_category (id)
 );
 
 CREATE TABLE user_tag

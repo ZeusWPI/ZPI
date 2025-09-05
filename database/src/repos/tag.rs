@@ -13,11 +13,12 @@ impl<'a> TagRepo<'a> {
 
     pub async fn for_user(&self, user_id: u32) -> Result<Vec<Tag>, DatabaseError> {
         Ok(sqlx::query_as(
-            "SELECT tag.id, tag.name, tag_type.name AS type, description
+            "SELECT tag.id, tag.name, tag_category.name AS category, description
             FROM user_tag
                 INNER JOIN tag
                     ON user_tag.tag_id = tag.id AND user_tag.user_id = ?
-                INNER JOIN tag_type ON tag.type = tag_type.id;
+                INNER JOIN tag_category
+                    ON tag.category = tag_category.id;
             ",
         )
         .bind(user_id)

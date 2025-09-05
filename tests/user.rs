@@ -3,7 +3,10 @@ use reqwest::StatusCode;
 use sqlx::SqlitePool;
 use zpi::handlers::AuthenticatedUser;
 
-use crate::common::{AuthenticatedRouter, IntoStruct, UnauthenticatedRouter};
+use crate::common::{
+    into_struct::IntoStruct,
+    router::{AuthenticatedRouter, UnauthenticatedRouter},
+};
 
 mod common;
 
