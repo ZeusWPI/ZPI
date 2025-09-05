@@ -11,6 +11,7 @@ use crate::{AppState, config::AppConfig, error::AppError};
 pub mod auth;
 pub mod image;
 pub mod user;
+pub mod version;
 
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub struct AuthenticatedUser {

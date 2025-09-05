@@ -13,7 +13,10 @@ use tower_sessions::{MemoryStore, SessionManagerLayer, cookie::SameSite};
 use crate::{
     config::AppConfig,
     error::AppError,
-    handlers::{AuthenticatedUser, auth::AuthHandler, image::ImageHandler, user::UserHandler},
+    handlers::{
+        AuthenticatedUser, auth::AuthHandler, image::ImageHandler, user::UserHandler,
+        version::VersionHandler,
+    },
 };
 
 pub mod config;
@@ -71,6 +74,7 @@ fn open_routes() -> Router<AppState> {
         .route("/login", get(AuthHandler::login))
         .route("/oauth/callback", get(AuthHandler::callback))
         .route("/image/{id}", get(ImageHandler::get))
+        .route("/version", get(VersionHandler::get))
 }
 
 fn authenticated_routes() -> Router<AppState> {
