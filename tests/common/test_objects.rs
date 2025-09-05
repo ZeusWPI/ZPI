@@ -2,10 +2,18 @@ use database::models::{
     tag::Tag,
     user::{User, UserProfile},
 };
+use zpi::handlers::AuthenticatedUser;
 
 pub struct TestObjects;
 
 impl TestObjects {
+    pub fn authenticated_user_1() -> AuthenticatedUser {
+        AuthenticatedUser {
+            id: 1,
+            username: "cheese".into(),
+        }
+    }
+
     pub fn user_1() -> User {
         User {
             id: 1,
