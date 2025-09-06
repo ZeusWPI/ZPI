@@ -5,29 +5,13 @@
 	import ProfileImage from '$lib/components/profile-components/ProfileImage.svelte';
 	import type { CreateQueryResult } from '@tanstack/svelte-query';
 	import { createQuery } from '@tanstack/svelte-query';
-	import { PUBLIC_BACKEND_URL } from '$env/static/public';
+	import { getProfile, type ProfileData } from '$lib/globalFunctions-Types';
 
 	let { username, editAllowed = false } = $props();
 
-	type Tag = {
-		name: string,
-		category: string,
-	}
-	type ProfileData = {
-		id: number,
-		username: string,
-		about: string,
-		tags: Tag[],
-	}
-
-	let query: CreateQueryResult<ProfileData>;
-	query = createQuery({
+	let query: CreateQueryResult<ProfileData> = createQuery({
 			queryKey: [`profile-${username}`],
-			queryFn: async () => {
-				return fetch(`${PUBLIC_BACKEND_URL}/api/users/${username}`, {
-					credentials: 'include'
-				}).then((r) => r.json());
-			},
+			queryFn: async () => getProfile(username),
 			retry: false
 		}
 	);
