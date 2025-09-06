@@ -9,11 +9,15 @@
 
 	let { username, editAllowed = false } = $props();
 
+	type Tag = {
+		name: string,
+		category: string,
+	}
 	type ProfileData = {
 		id: number,
 		username: string,
 		about: string,
-		tags: any //TODO Update Tag Type
+		tags: Tag[],
 	}
 
 	let query: CreateQueryResult<ProfileData>;

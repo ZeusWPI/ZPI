@@ -7,11 +7,11 @@
 		["topper", "0, 180, 0"]
 	])
 
-	const getColor = (tagType:string) => tagTypeColors.get(tagType) || "160, 160, 160"
+	const getColor = (tagCategory:string) => tagTypeColors.get(tagCategory) || "160, 160, 160"
 </script>
 
 
-<span class="border-2 rounded-2xl px-3 mx-1 inline-block" style="--color: {getColor(tag.type)};">
+<span class="border-2 rounded-2xl px-3 mx-1 inline-block" style="--color: {getColor(tag.category)};">
 	{tag.name}
 </span>
 
