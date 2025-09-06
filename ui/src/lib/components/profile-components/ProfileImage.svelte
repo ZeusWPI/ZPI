@@ -1,6 +1,6 @@
 <script lang="ts">
 
-	import ImageChangeModal from '$lib/components/ImageChangeModal.svelte';
+	import ImageChangeModal from '$lib/components/profile-components/ImageChangeModal.svelte';
 	import PencilIcon from '$lib/components/icons/PencilIcon.svelte';
 	import { PUBLIC_BACKEND_URL } from '$env/static/public';
 
