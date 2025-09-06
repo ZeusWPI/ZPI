@@ -2,8 +2,10 @@
 	import { createDialog } from 'svelte-headlessui';
 	import Transition from 'svelte-transition';
 	import { PUBLIC_BACKEND_URL } from '$env/static/public';
+	import { getContext } from 'svelte';
 
-	let { userId } = $props();
+	let { userId, imgSrc } = $props();
+	let { reloadImage } = getContext('imageReload');
 
 	const dialog = createDialog({ label: 'Change Profile Image' });
 
@@ -28,7 +30,7 @@
 		fetch(`${PUBLIC_BACKEND_URL}/api/image`, {
 			method: 'DELETE',
 			credentials: 'include'
-		}).then(() => location.reload());
+		}).then(reloadImage);
 	}
 
 	function uploadImage() {
@@ -37,8 +39,9 @@
 			headers: {},
 			body: (document.getElementById('file-upload') as HTMLInputElement).files?.[0],
 			credentials: 'include'
-		}).then(() => location.reload());
+		}).then(reloadImage);
 	}
+
 
 </script>
 <div class="relative z-10">
@@ -70,7 +73,7 @@
 					>
 						<h3 class="text-lg leading-6 font-medium text-gray-900">Change Profile Image</h3>
 						<div class="mt-2 flex flex-row justify-center">
-							<img id="previewImg" class="size-32 rounded-xl m-7" src="{PUBLIC_BACKEND_URL}/api/image/{userId}"
+							<img id="previewImg" class="size-32 rounded-xl m-7" src="{imgSrc}"
 									 alt="Preview">
 							<div class="flex flex-col justify-center">
 								<label
