@@ -39,3 +39,9 @@ export async function getProfile(username: string): Promise<ProfileData> {
 		credentials: 'include'
 	}).then((r) => r.json());
 }
+
+export async function getBackendVersion(): Promise<String> {
+	return fetch(`${PUBLIC_BACKEND_URL}/api/version`)
+		.then((r) => r.json())
+		.then((r) => r.version);
+}
