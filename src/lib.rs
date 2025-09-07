@@ -82,7 +82,7 @@ fn authenticated_routes() -> Router<AppState> {
         .nest("/users", UserHandler::router())
         .route("/logout", get(AuthHandler::logout))
         .route(
-            "/image/",
+            "/image",
             post(ImageHandler::post).delete(ImageHandler::delete),
         )
         .route_layer(from_extractor::<AuthenticatedUser>())

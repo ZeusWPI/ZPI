@@ -39,7 +39,8 @@
 			headers: {},
 			body: (document.getElementById('file-upload') as HTMLInputElement).files?.[0],
 			credentials: 'include'
-		}).then(reloadImage);
+		}).then(close)
+			.then(reloadImage);
 	}
 
 
