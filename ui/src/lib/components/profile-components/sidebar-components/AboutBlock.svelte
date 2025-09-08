@@ -43,7 +43,6 @@
 	</button>
 {/if}
 	</span>
-<!--<br>-->
 <div class="mb-6">
 	{#if editMode }
 		<form>

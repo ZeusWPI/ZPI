@@ -1,3 +1,4 @@
+// @ts-ignore
 import { PUBLIC_BACKEND_URL } from '$env/static/public';
 
 export type Tag = {

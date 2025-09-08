@@ -10,7 +10,7 @@
 </script>
 
 
-<div class="flex flex-col justify-center items-center md:grow md:items-start md:justify-end md:p-2">
+<div class="flex flex-col justify-center items-center md:grow md:items-start md:justify-end md:p-2 md:pl-6 lg:pl-2">
 
 	<!-- Name -->
 	<span

@@ -23,7 +23,7 @@
 
 </script>
 {#if editAllowed}
-	<div class="relative size-56 m-6 mx-auto mb-2">
+	<div class="relative size-56 m-6 aspect-square mx-auto mb-2">
 		<button class="cursor-pointer" onclick={() => editImageModal.open()}>
 			<img class="size-56 md:object-contain rounded-4xl"
 					 src="{imgSrc}"
