@@ -1,6 +1,6 @@
 <script lang="ts">
 	import PencilIcon from '$lib/components/icons/PencilIcon.svelte';
-	import { PUBLIC_BACKEND_URL } from '$env/static/public';
+	import { submitAbout } from '$lib/globalFunctions-Types';
 
 	let editMode = $state(false);
 
@@ -11,22 +11,12 @@
 	let aboutInput: HTMLTextAreaElement | undefined = $state();
 
 	async function editAbout() {
-		const response = await fetch(
-			`${PUBLIC_BACKEND_URL}/api/users/${userId}`,
-			{
-				credentials: 'include',
-				method: 'PATCH',
-				headers: {
-					'Content-type': 'application/json'
-				},
-				body: JSON.stringify({
-					about: aboutInput?.value
-				})
+		if (aboutInput?.value) {
+			const response = await submitAbout(userId, aboutInput?.value);
+			if (response.ok) {
+				editMode = false;
+				currentDescription = await response.json().then((r) => r.about);
 			}
-		);
-		if (response.ok) {
-			editMode = false;
-			currentDescription = await response.json().then((r) => r.about);
 		}
 	}
 

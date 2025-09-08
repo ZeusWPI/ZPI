@@ -46,3 +46,16 @@ export async function getBackendVersion(): Promise<String> {
 		.then((r) => r.json())
 		.then((r) => r.version);
 }
+
+export async function submitAbout(userId: number, about: string): Promise<Response> {
+	return fetch(`${PUBLIC_BACKEND_URL}/api/users/${userId}`, {
+		credentials: 'include',
+		method: 'PATCH',
+		headers: {
+			'Content-type': 'application/json'
+		},
+		body: JSON.stringify({
+			about: about
+		})
+	});
+}
