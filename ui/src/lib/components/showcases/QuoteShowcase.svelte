@@ -16,8 +16,7 @@
         src: local("Fira Sans"), local("Fira Sans Regular"),
         url(/fonts/FiraSans-Regular.otf) format("opentype"),
         url(/fonts/FiraSans-Regular.woff2) format("woff2"),
-        url(/fonts/FiraSans-Regular.woff) format("woff"),
-        url(/fonts/FiraSans-Regular.svg) format("svg");
+        url(/fonts/FiraSans-Regular.woff) format("woff");
     }
 
     @font-face {
@@ -26,8 +25,7 @@
         src: local("Fira Sans"), local("Fira Sans Bold"),
         url(/fonts/FiraSans-Bold.otf) format("opentype"),
         url(/fonts/FiraSans-Bold.woff2) format("woff2"),
-        url(/fonts/FiraSans-Bold.woff) format("woff"),
-        url(/fonts/FiraSans-Bold.svg) format("svg");
+        url(/fonts/FiraSans-Bold.woff) format("woff");
     }
 
     blockquote::before {
