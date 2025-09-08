@@ -1,5 +1,4 @@
 <script lang="ts">
-	import favicon from '$lib/assets/favicon.svg';
 	import logoutIcon from '$lib/assets/logout.svg';
 	import { PUBLIC_BACKEND_URL } from '$env/static/public';
 
@@ -11,7 +10,7 @@
 <div class="w-full text-white left-0 top-0 p-2 flex flex-row justify-between items-center">
 	<!-- Left Content -->
 	<div class="flex flex-row items-center">
-		<img class="size-8" src={favicon} alt="ZPI Icon">
+		<img class="size-8" src="/favicon.svg" alt="ZPI Icon">
 		<span class="ml-2 text-2xl font-extrabold">ZPI</span>
 	</div>
 	<!-- Right Content -->
