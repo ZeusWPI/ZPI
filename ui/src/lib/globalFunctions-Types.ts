@@ -1,5 +1,6 @@
 // @ts-ignore
-import { PUBLIC_BACKEND_URL } from '$env/static/public';
+import { env } from '$env/dynamic/public';
+const BACKEND_URL = env.PUBLIC_BACKEND_URL;
 
 export type Tag = {
 	name: string;
@@ -25,30 +26,30 @@ export function toTitleCase(str: string) {
 
 // API Query Functions //
 export async function getCurrentUser(): Promise<CurrentUser> {
-	const response = await fetch(PUBLIC_BACKEND_URL + '/api/users/me', {
+	const response = await fetch(BACKEND_URL + '/api/users/me', {
 		credentials: 'include'
 	});
 	if (response.status === 401) {
 		console.log('Redirecting');
-		location.replace(PUBLIC_BACKEND_URL + '/api/login');
+		location.replace(BACKEND_URL + '/api/login');
 	}
 	return response.json();
 }
 
 export async function getProfile(username: string): Promise<ProfileData> {
-	return fetch(`${PUBLIC_BACKEND_URL}/api/users/${username}`, {
+	return fetch(`${BACKEND_URL}/api/users/${username}`, {
 		credentials: 'include'
 	}).then((r) => r.json());
 }
 
 export async function getBackendVersion(): Promise<String> {
-	return fetch(`${PUBLIC_BACKEND_URL}/api/version`)
+	return fetch(`${BACKEND_URL}/api/version`)
 		.then((r) => r.json())
 		.then((r) => r.version);
 }
 
 export async function submitAbout(userId: number, about: string): Promise<Response> {
-	return fetch(`${PUBLIC_BACKEND_URL}/api/users/${userId}`, {
+	return fetch(`${BACKEND_URL}/api/users/${userId}`, {
 		credentials: 'include',
 		method: 'PATCH',
 		headers: {

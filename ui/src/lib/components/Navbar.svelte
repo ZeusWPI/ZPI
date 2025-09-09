@@ -1,6 +1,8 @@
 <script lang="ts">
 	import logoutIcon from '$lib/assets/logout.svg';
-	import { PUBLIC_BACKEND_URL } from '$env/static/public';
+	import { env } from '$env/dynamic/public';
+	
+	const BACKEND_URL = env.PUBLIC_BACKEND_URL;
 
 
 	let { username } = $props();
@@ -17,7 +19,7 @@
 	<div class="flex flex-row items-center">
 		{#if username !== ""}
 			<span class="text-lg">{username}</span>
-			<a href="{PUBLIC_BACKEND_URL}/api/logout">
+			<a href="{BACKEND_URL}/api/logout">
 				<img class="size-6 mx-2 invert" src={logoutIcon} alt="Logout" />
 			</a>
 		{/if}

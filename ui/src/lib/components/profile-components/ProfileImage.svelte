@@ -2,15 +2,17 @@
 
 	import ImageChangeModal from '$lib/components/profile-components/ImageChangeModal.svelte';
 	import PencilIcon from '$lib/components/icons/PencilIcon.svelte';
-	import { PUBLIC_BACKEND_URL } from '$env/static/public';
+	import { env } from '$env/dynamic/public';
 	import { setContext } from 'svelte';
+
+	const BACKEND_URL = env.PUBLIC_BACKEND_URL;
 
 
 	let editImageModal: any = $state();
 
 	let { userId, editAllowed } = $props();
 
-	let imgSrc = $state(`${PUBLIC_BACKEND_URL}/api/image/${userId}`);
+	let imgSrc = $state(`${BACKEND_URL}/api/image/${userId}`);
 
 	function reloadImage() {
 		const currentSrc = imgSrc.split('?')[0];

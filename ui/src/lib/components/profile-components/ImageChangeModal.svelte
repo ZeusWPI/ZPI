@@ -1,8 +1,10 @@
 <script lang="ts">
 	import { createDialog } from 'svelte-headlessui';
 	import Transition from 'svelte-transition';
-	import { PUBLIC_BACKEND_URL } from '$env/static/public';
+	import { env } from '$env/dynamic/public';
 	import { getContext } from 'svelte';
+
+	const BACKEND_URL = env.PUBLIC_BACKEND_URL;
 
 	let { userId, imgSrc } = $props();
 	let { reloadImage } = getContext('imageReload');
@@ -20,27 +22,36 @@
 	let loadFile = function(event: any) {
 		let previewImage = document.getElementById('previewImg') as HTMLImageElement;
 		previewImage.src = URL.createObjectURL(event.target.files[0]);
-		console.log('setSource');
 		previewImage.onload = function() {
 			URL.revokeObjectURL(previewImage.src);
 		};
 	};
 
 	function resetImage() {
-		fetch(`${PUBLIC_BACKEND_URL}/api/image`, {
+		fetch(`${BACKEND_URL}/api/image`, {
 			method: 'DELETE',
 			credentials: 'include'
-		}).then(reloadImage);
+		})
+			.then(() => (document.getElementById('file-upload') as HTMLInputElement).value = '')
+			.then(reloadImage);
 	}
 
 	function uploadImage() {
-		fetch(`${PUBLIC_BACKEND_URL}/api/image`, {
-			method: 'POST',
-			headers: {},
-			body: (document.getElementById('file-upload') as HTMLInputElement).files?.[0],
-			credentials: 'include'
-		}).then(close)
-			.then(reloadImage);
+		const fileInput = (document.getElementById('file-upload') as HTMLInputElement);
+		if (fileInput.files && fileInput.files.length > 0) {
+			fetch(`${BACKEND_URL}/api/image`, {
+				method: 'POST',
+				headers: {},
+				body: fileInput.files[0],
+				credentials: 'include'
+			})
+				.then(() => fileInput.value = '')
+				.then(close)
+				.then(reloadImage);
+		} else {
+			close();
+			reloadImage();
+		}
 	}
 
 
