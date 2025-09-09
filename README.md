@@ -1,21 +1,25 @@
-# Zeus Profile Images
+# Zeus Profile Information
+Zeus profiles!!!
 
-let people upload profile images and make them available on a public endpoint.
-
-# running
-
+# Running
+Backend:
 ```bash
 cp .env.example .env
 cargo run
 ```
+Frontend:
+```bash
+npm install
+PUBLIC_BACKEND_URL="http://localhost:3000" npm run dev
+```
 
-# how it works
+# How it works
 
-login with zauth, upload an image
+Login with zauth and edit your profile
 
-# public endpoints
+# Public endpoints
 
-GET `/image/{zauth_user_id}` -> gives that user's profile image
+GET `/api/image/{zauth_user_id}` -> gives that user's profile image
 
 You can give any optional query parameters to change which reply you receive:
 
@@ -27,9 +31,10 @@ You can give any optional query parameters to change which reply you receive:
 > [!NOTE]
 > `size` will return the next largest image if requested value is not available
 
-# config
+# Config
 
-see [env example](./.env.example) for an example
+## Backend
+See [env example](./.env.example) for an example
 | env var | explaination |
 | --------------------- | ---------------------------------------------------------- |
 | `ZAUTH_URL` | base url of zauth |
@@ -40,11 +45,17 @@ see [env example](./.env.example) for an example
 | `MAGICK_PATH` | path where the `magick` binary is located |
 | `DATABASE_URL` | path to the sqlite database file |
 | `LOG_LEVEL` | log level |
-| `FRONTEND_URL` | url the fronted |
+| `FRONTEND_URL` | url to the fronted |
+
+# Frontend
+See [env example](./ui/.env.example) for an example
+| env var | explaination |
+| --------------------- | ---------------------------------------------------------- |
+| `PUBLIC_BANKEND_URL` | url to bankend |
 
 # Development
 
-if you want to enable the git precommit hooks, run:
+If you want to enable the git precommit hooks, run:
 
 ```
 git config core.hooksPath .githooks
