@@ -62,6 +62,9 @@ pub enum AppError {
 
     #[error("Forbidden")]
     Forbidden,
+
+    #[error("Payload error: {0}")]
+    PayloadError(String),
 }
 
 impl IntoResponse for AppError {
@@ -75,6 +78,7 @@ impl IntoResponse for AppError {
 impl AppError {
     fn error_page(&self) -> (StatusCode, &'static str) {
         let (status, msg) = match self {
+            Self::PayloadError(_) => (StatusCode::BAD_REQUEST, "Payload error"),
             Self::NotLoggedIn => (StatusCode::UNAUTHORIZED, "Not logged in."),
             Self::Forbidden => (StatusCode::FORBIDDEN, "Forbidden."),
             Self::NoFile => (

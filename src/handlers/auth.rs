@@ -1,5 +1,5 @@
 use axum::{
-    extract::Query,
+    extract::{Query, rejection::QueryRejection},
     response::{IntoResponse, Redirect},
 };
 use database::{Database, models::user::UserCreatePayload};
@@ -31,11 +31,16 @@ impl AuthHandler {
     }
 
     pub async fn callback(
-        Query(params): Query<Callback>,
+        query: Result<Query<Callback>, QueryRejection>,
         session: Session,
         config: AppConfig,
         db: Database,
     ) -> Result<Redirect, AppError> {
+        let params = match query {
+            Err(error) => return Err(AppError::PayloadError(error.to_string())),
+            Ok(Query(params)) => params,
+        };
+
         let zauth_state = match session.get::<String>("state").await? {
             None => return Ok(Redirect::to("/login")),
             Some(v) => v,
