@@ -90,7 +90,11 @@ impl ImageHandler {
                 Err(e)?;
             }
         }
-        tokio::fs::remove_file(profile.path_orig()).await?;
+        if let Err(e) = tokio::fs::remove_file(profile.path_orig()).await
+            && e.kind() != NotFound
+        {
+            Err(e)?;
+        }
         Ok(StatusCode::NO_CONTENT)
     }
 }
