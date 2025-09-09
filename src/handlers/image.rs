@@ -5,25 +5,28 @@ use std::{
 };
 
 use axum::{
-    extract::{Multipart, Path, Query},
-    response::{IntoResponse, Redirect, Response},
+    body::{Body, Bytes, to_bytes},
+    extract::{Path, Query},
+    response::{IntoResponse, Response},
 };
 use axum_extra::TypedHeader;
 use headers::{ETag, IfNoneMatch};
 use reqwest::{StatusCode, header::ETAG};
 use serde::Deserialize;
 
-use crate::{error::AppError, handlers::AuthenticatedUser, image::ProfileImage};
+use crate::{config::AppConfig, error::AppError, handlers::AuthenticatedUser, image::ProfileImage};
 
 static SIZES: &[u32] = &[64, 128, 256, 512];
+static MAX_SIZE: u32 = 512;
 
-pub struct Image;
+pub struct ImageHandler;
 
-impl Image {
+impl ImageHandler {
     pub async fn get(
         Query(params): Query<GetImageQuery>,
         Path(user_id): Path<u32>,
         if_none_match: Option<TypedHeader<IfNoneMatch>>,
+        config: AppConfig,
     ) -> Result<Response, AppError> {
         // default size
         let requested_size = params.size.unwrap_or(256);
@@ -32,9 +35,9 @@ impl Image {
             .iter()
             .filter(|x| **x > requested_size)
             .min()
-            .unwrap_or(SIZES.iter().max().unwrap());
+            .unwrap_or(&MAX_SIZE);
 
-        let profile = ProfileImage::new(user_id);
+        let profile = ProfileImage::new(user_id, config);
         let etag_opt = file_modified_etag(&profile.path(size)).await?;
 
         // return early if etag matches
@@ -61,26 +64,25 @@ impl Image {
 
     pub async fn post(
         user: AuthenticatedUser,
-        mut multipart: Multipart,
-    ) -> Result<Redirect, AppError> {
-        while let Some(field) = multipart.next_field().await? {
-            if let Some("image-file") = field.name() {
-                let data = field.bytes().await?;
+        config: AppConfig,
+        body: Body,
+    ) -> Result<StatusCode, AppError> {
+        let data: Bytes = to_bytes(body, usize::MAX).await?;
 
-                ProfileImage::new(user.id)
-                    .with_data(&data)
-                    .await?
-                    .save_sizes(SIZES)
-                    .await?;
+        ProfileImage::new(user.id, config)
+            .with_data(&data)
+            .await?
+            .save_sizes(SIZES)
+            .await?;
 
-                return Ok(Redirect::to("/"));
-            }
-        }
-        Err(AppError::NoFile)
+        Ok(StatusCode::NO_CONTENT)
     }
 
-    pub async fn delete(user: AuthenticatedUser) -> Result<Redirect, AppError> {
-        let profile = ProfileImage::new(user.id);
+    pub async fn delete(
+        user: AuthenticatedUser,
+        config: AppConfig,
+    ) -> Result<StatusCode, AppError> {
+        let profile = ProfileImage::new(user.id, config);
         for size in SIZES {
             if let Err(e) = tokio::fs::remove_file(profile.path(*size)).await
                 && e.kind() != NotFound
@@ -88,8 +90,12 @@ impl Image {
                 Err(e)?;
             }
         }
-        tokio::fs::remove_file(profile.path_orig()).await?;
-        Ok(Redirect::to("/"))
+        if let Err(e) = tokio::fs::remove_file(profile.path_orig()).await
+            && e.kind() != NotFound
+        {
+            Err(e)?;
+        }
+        Ok(StatusCode::NO_CONTENT)
     }
 }
 

@@ -1,15 +1,14 @@
 use axum::{
     extract::multipart::MultipartError,
-    response::{Html, IntoResponse, Redirect, Response},
+    response::{IntoResponse, Response},
 };
-use image::ImageError;
+use database::error::DatabaseError;
 use reqwest::Error as ReqwestError;
 use reqwest::StatusCode;
 use std::io::Error as IoError;
 use thiserror::Error;
+use tokio::task::JoinError;
 use tower_sessions::session::Error as TowerError;
-
-use crate::pages::Page;
 
 #[derive(Debug, Error)]
 pub enum AppError {
@@ -22,6 +21,9 @@ pub enum AppError {
     #[error("I/O error")]
     Io(#[from] IoError),
 
+    #[error("Thread join error: {0}")]
+    Join(#[from] JoinError),
+
     #[error("Internal server error: {0}")]
     Internal(String),
 
@@ -31,17 +33,23 @@ pub enum AppError {
     #[error("HTTP request error {0}")]
     Reqwest(#[from] ReqwestError),
 
-    #[error("Image processing error")]
-    Image(#[from] ImageError),
+    #[error("Database error: {0}")]
+    Database(DatabaseError),
 
     #[error("ImageMagick command failed: {0}")]
     Magick(String),
+
+    #[error("Env var {0} not set :(")]
+    Env(String),
+
+    #[error("Axum error: {0}")]
+    Axum(#[from] axum::Error),
 
     #[error("Submitted image resolution was too large")]
     ImageResTooLarge,
 
     #[error("The requested image was not found")]
-    ImageNotFound,
+    NotFound,
 
     #[error("Submitted file had an incorrect type")]
     WrongFileType,
@@ -51,23 +59,28 @@ pub enum AppError {
 
     #[error("User was not logged in")]
     NotLoggedIn,
+
+    #[error("Forbidden")]
+    Forbidden,
+
+    #[error("Payload error: {0}")]
+    PayloadError(String),
 }
 
 impl IntoResponse for AppError {
     fn into_response(self) -> Response {
         // log!
         tracing::error!("{}", self);
-
-        match self {
-            Self::NotLoggedIn => Redirect::to("/login").into_response(),
-            _ => self.error_page().into_response(),
-        }
+        self.error_page().into_response()
     }
 }
 
 impl AppError {
-    fn error_page(&self) -> (StatusCode, Html<String>) {
+    fn error_page(&self) -> (StatusCode, &'static str) {
         let (status, msg) = match self {
+            Self::PayloadError(_) => (StatusCode::BAD_REQUEST, "Payload error"),
+            Self::NotLoggedIn => (StatusCode::UNAUTHORIZED, "Not logged in."),
+            Self::Forbidden => (StatusCode::FORBIDDEN, "Forbidden."),
             Self::NoFile => (
                 StatusCode::BAD_REQUEST,
                 "No file found in request. Please select an image.",
@@ -84,7 +97,7 @@ impl AppError {
                 StatusCode::BAD_REQUEST,
                 "Incorrect file type. Please upload a JPG, PNG, GIF, or WEBP file.",
             ),
-            Self::ImageNotFound => (StatusCode::NOT_FOUND, "We couldn't find that image."),
+            Self::NotFound => (StatusCode::NOT_FOUND, "We couldn't find that."),
 
             _ => (
                 StatusCode::INTERNAL_SERVER_ERROR,
@@ -92,6 +105,15 @@ impl AppError {
             ),
         };
 
-        (status, Page::error(status, msg))
+        (status, msg)
+    }
+}
+
+impl From<DatabaseError> for AppError {
+    fn from(value: DatabaseError) -> Self {
+        match value {
+            DatabaseError::NotFound => Self::NotFound,
+            other => Self::Database(other),
+        }
     }
 }

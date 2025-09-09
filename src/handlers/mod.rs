@@ -1,15 +1,22 @@
-use axum::{extract::FromRequestParts, http::request::Parts};
+use axum::{
+    extract::{FromRequestParts, State},
+    http::request::Parts,
+};
+use database::{Database, models::user::User};
+use serde::{Deserialize, Serialize};
 use tower_sessions::Session;
 
-use crate::{error::AppError, handlers::auth::ZauthUser};
+use crate::{AppState, config::AppConfig, error::AppError};
 
 pub mod auth;
 pub mod image;
+pub mod user;
+pub mod version;
 
-#[allow(dead_code)]
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub struct AuthenticatedUser {
-    id: u32,
-    name: String,
+    pub id: u32,
+    pub username: String,
 }
 
 impl<S> FromRequestParts<S> for AuthenticatedUser
@@ -23,16 +30,46 @@ where
             .await
             .map_err(|(_, msg)| AppError::Internal(msg.into()))?;
 
-        let user: Option<ZauthUser> = session.get("user").await.map_err(AppError::Session)?;
-        Ok(user.ok_or(AppError::NotLoggedIn)?.into())
+        let user: Option<AuthenticatedUser> =
+            session.get("user").await.map_err(AppError::Session)?;
+        user.ok_or(AppError::NotLoggedIn)
     }
 }
 
-impl From<ZauthUser> for AuthenticatedUser {
-    fn from(user: ZauthUser) -> Self {
+impl From<User> for AuthenticatedUser {
+    fn from(user: User) -> Self {
         Self {
             id: user.id,
-            name: user.username,
+            username: user.username,
         }
+    }
+}
+
+impl FromRequestParts<AppState> for Database {
+    type Rejection = AppError;
+
+    async fn from_request_parts(
+        parts: &mut Parts,
+        state: &AppState,
+    ) -> Result<Database, Self::Rejection> {
+        let State(app_state) = State::<AppState>::from_request_parts(parts, state)
+            .await
+            .map_err(|_| AppError::Internal("Failed to extract app state".into()))?;
+
+        Ok(app_state.db)
+    }
+}
+
+impl FromRequestParts<AppState> for AppConfig {
+    type Rejection = AppError;
+
+    async fn from_request_parts(
+        parts: &mut Parts,
+        state: &AppState,
+    ) -> Result<AppConfig, Self::Rejection> {
+        let State(app_state) = State::<AppState>::from_request_parts(parts, state)
+            .await
+            .map_err(|_| AppError::Internal("Failed to extract app state".into()))?;
+        Ok(app_state.config)
     }
 }

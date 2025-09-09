@@ -1,3 +1,7 @@
 /target
 .env
 /images
+*.db
+*.db-wal
+*.db-shm
+/.direnv
