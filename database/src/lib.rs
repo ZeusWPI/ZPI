@@ -2,15 +2,17 @@ use sqlx::{SqlitePool, migrate::MigrateDatabase, sqlite::SqlitePoolOptions};
 
 use crate::{
     error::DatabaseError,
-    repos::{tag::TagRepo, user::UserRepo},
+    repos::{services::ServiceRepo, tag::TagRepo, user::UserRepo},
 };
 
 pub mod models {
+    pub mod services;
     pub mod tag;
     pub mod user;
 }
 
 pub mod repos {
+    pub mod services;
     pub mod tag;
     pub mod user;
 }
@@ -49,5 +51,9 @@ impl Database {
 
     pub fn tags<'a>(&'a self) -> TagRepo<'a> {
         TagRepo::new(&self.db)
+    }
+
+    pub fn services<'a>(&'a self) -> ServiceRepo<'a> {
+        ServiceRepo::new(&self.db)
     }
 }

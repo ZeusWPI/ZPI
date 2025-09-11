@@ -13,9 +13,10 @@ use tower_sessions::{MemoryStore, SessionManagerLayer, cookie::SameSite};
 use crate::{
     config::AppConfig,
     error::AppError,
-    extractors::AuthenticatedUser,
+    extractors::{Admin, AuthenticatedUser},
     handlers::{
-        auth::AuthHandler, image::ImageHandler, user::UserHandler, version::VersionHandler,
+        auth::AuthHandler, image::ImageHandler, services::ServiceHandler, user::UserHandler,
+        version::VersionHandler,
     },
 };
 
@@ -91,7 +92,8 @@ fn authenticated_routes() -> Router<AppState> {
 
 fn admin_routes() -> Router<AppState> {
     Router::new()
-    // .route_layer(from_extractor::<Admin>())
+        .route("/servives", get(ServiceHandler::get))
+        .route_layer(from_extractor::<Admin>())
 }
 
 #[allow(clippy::expect_used)]
