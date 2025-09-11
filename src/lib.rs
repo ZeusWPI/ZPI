@@ -13,17 +13,17 @@ use tower_sessions::{MemoryStore, SessionManagerLayer, cookie::SameSite};
 use crate::{
     config::AppConfig,
     error::AppError,
+    extractors::AuthenticatedUser,
     handlers::{
-        AuthenticatedUser, auth::AuthHandler, image::ImageHandler, user::UserHandler,
-        version::VersionHandler,
+        auth::AuthHandler, image::ImageHandler, user::UserHandler, version::VersionHandler,
     },
 };
 
 pub mod config;
 pub mod error;
+pub mod extractors;
 pub mod handlers;
 pub mod image;
-pub mod middleware;
 
 #[derive(Clone)]
 pub struct AppState {
@@ -66,6 +66,7 @@ pub fn api_router() -> Router<AppState> {
     Router::new()
         .merge(open_routes())
         .merge(authenticated_routes())
+        .merge(admin_routes())
         .fallback(get(|| async { StatusCode::NOT_FOUND }))
 }
 
@@ -86,6 +87,11 @@ fn authenticated_routes() -> Router<AppState> {
             post(ImageHandler::post).delete(ImageHandler::delete),
         )
         .route_layer(from_extractor::<AuthenticatedUser>())
+}
+
+fn admin_routes() -> Router<AppState> {
+    Router::new()
+    // .route_layer(from_extractor::<Admin>())
 }
 
 #[allow(clippy::expect_used)]

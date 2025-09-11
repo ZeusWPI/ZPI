@@ -1,7 +1,7 @@
 use database::models::user::{User, UserPatchPayload, UserProfile};
 use reqwest::StatusCode;
 use sqlx::SqlitePool;
-use zpi::handlers::AuthenticatedUser;
+use zpi::extractors::AuthenticatedUser;
 
 use crate::common::{
     into_struct::IntoStruct,
