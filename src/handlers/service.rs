@@ -1,5 +1,5 @@
 use axum::Json;
-use database::{Database, models::services::Service};
+use database::{Database, models::service::Service};
 
 use crate::error::AppError;
 

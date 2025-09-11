@@ -1,6 +1,6 @@
 use sqlx::SqlitePool;
 
-use crate::{error::DatabaseError, models::services::Service};
+use crate::{error::DatabaseError, models::service::Service};
 
 pub struct ServiceRepo<'a> {
     db: &'a SqlitePool,
@@ -16,7 +16,5 @@ impl<'a> ServiceRepo<'a> {
             .fetch_optional(self.db)
             .await?
             .ok_or(DatabaseError::NotFound)
-
-        // TODO fetch_optional?
     }
 }
