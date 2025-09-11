@@ -2,7 +2,7 @@ use database::models::{
     tag::Tag,
     user::{User, UserProfile},
 };
-use zpi::handlers::AuthenticatedUser;
+use zpi::extractors::AuthenticatedUser;
 
 pub struct TestObjects;
 

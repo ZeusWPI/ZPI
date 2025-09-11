@@ -5,7 +5,8 @@ use database::models::user::UserProfile;
 use database::models::user::{User, UserPatchPayload};
 
 use crate::AppState;
-use crate::{error::AppError, handlers::AuthenticatedUser};
+use crate::error::AppError;
+use crate::extractors::authenticated_user::AuthenticatedUser;
 
 pub struct UserHandler;
 

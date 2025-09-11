@@ -12,7 +12,9 @@ use serde::Serialize;
 use sqlx::SqlitePool;
 use tower::ServiceExt;
 use tower_sessions::{MemoryStore, Session, SessionManagerLayer, session::Id};
-use zpi::{AppState, api_router, config::AppConfig, handlers::AuthenticatedUser};
+use zpi::{
+    AppState, api_router, config::AppConfig, extractors::authenticated_user::AuthenticatedUser,
+};
 
 pub struct AuthenticatedRouter {
     router: Router,

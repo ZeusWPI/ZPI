@@ -7,7 +7,9 @@ use rand::distr::{Alphanumeric, SampleString};
 use serde::{Deserialize, Serialize};
 use tower_sessions::Session;
 
-use crate::{config::AppConfig, error::AppError, handlers::AuthenticatedUser};
+use crate::{
+    config::AppConfig, error::AppError, extractors::authenticated_user::AuthenticatedUser,
+};
 
 pub struct AuthHandler;
 
