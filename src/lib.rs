@@ -92,7 +92,7 @@ fn authenticated_routes() -> Router<AppState> {
 
 fn admin_routes() -> Router<AppState> {
     Router::new()
-        .route("/servives", get(ServiceHandler::get))
+        .route("/services", get(ServiceHandler::get))
         .route_layer(from_extractor::<Admin>())
 }
 
