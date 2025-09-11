@@ -9,6 +9,7 @@ use crate::common::{
 mod common;
 
 #[sqlx::test(fixtures("users", "tags"))]
+#[test_log::test]
 async fn get_user_with_tags(db_pool: SqlitePool) {
     let router = AuthenticatedRouter::new(db_pool).await;
     let response = router.get("/users/2").await;

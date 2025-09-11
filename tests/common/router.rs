@@ -6,13 +6,13 @@ use axum::{
     http::Request,
     response::{IntoResponse, Response},
 };
-use database::{Database, models::user::User};
+use database::Database;
 use reqwest::header;
 use serde::Serialize;
 use sqlx::SqlitePool;
 use tower::ServiceExt;
 use tower_sessions::{MemoryStore, Session, SessionManagerLayer, session::Id};
-use zpi::{AppState, api_router, config::AppConfig};
+use zpi::{AppState, api_router, config::AppConfig, handlers::AuthenticatedUser};
 
 pub struct AuthenticatedRouter {
     router: Router,
@@ -29,10 +29,10 @@ impl AuthenticatedRouter {
             session
                 .insert(
                     "user",
-                    User {
+                    AuthenticatedUser {
                         id: 1,
                         username: "cheese".to_string(),
-                        about: "Just a test user, doing its job... and fantasizing about a life outside the test environment.".to_string(),
+                        admin: true,
                     },
                 )
                 .await
