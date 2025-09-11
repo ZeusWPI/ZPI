@@ -2,16 +2,18 @@ use sqlx::{SqlitePool, migrate::MigrateDatabase, sqlite::SqlitePoolOptions};
 
 use crate::{
     error::DatabaseError,
-    repos::{service::ServiceRepo, tag::TagRepo, user::UserRepo},
+    repos::{achievement::AchievementRepo, service::ServiceRepo, tag::TagRepo, user::UserRepo},
 };
 
 pub mod models {
+    pub mod achievement;
     pub mod service;
     pub mod tag;
     pub mod user;
 }
 
 pub mod repos {
+    pub mod achievement;
     pub mod service;
     pub mod tag;
     pub mod user;
@@ -55,5 +57,9 @@ impl Database {
 
     pub fn services<'a>(&'a self) -> ServiceRepo<'a> {
         ServiceRepo::new(&self.db)
+    }
+
+    pub fn achievements<'a>(&'a self) -> AchievementRepo<'a> {
+        AchievementRepo::new(&self.db)
     }
 }

@@ -15,8 +15,8 @@ use crate::{
     error::AppError,
     extractors::{Admin, AuthenticatedUser},
     handlers::{
-        auth::AuthHandler, image::ImageHandler, service::ServiceHandler, user::UserHandler,
-        version::VersionHandler,
+        achievement::AchievementHandler, auth::AuthHandler, image::ImageHandler,
+        service::ServiceHandler, user::UserHandler, version::VersionHandler,
     },
 };
 
@@ -93,6 +93,10 @@ fn authenticated_routes() -> Router<AppState> {
 fn admin_routes() -> Router<AppState> {
     Router::new()
         .route("/services", get(ServiceHandler::get))
+        .route(
+            "/services/{id}/achievements",
+            get(AchievementHandler::get_for_service),
+        )
         .route_layer(from_extractor::<Admin>())
 }
 

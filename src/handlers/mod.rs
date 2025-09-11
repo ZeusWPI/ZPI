@@ -1,3 +1,4 @@
+pub mod achievement;
 pub mod auth;
 pub mod image;
 pub mod service;
