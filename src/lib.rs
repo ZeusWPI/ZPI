@@ -15,7 +15,7 @@ use crate::{
     error::AppError,
     extractors::{Admin, AuthenticatedUser},
     handlers::{
-        auth::AuthHandler, image::ImageHandler, services::ServiceHandler, user::UserHandler,
+        auth::AuthHandler, image::ImageHandler, service::ServiceHandler, user::UserHandler,
         version::VersionHandler,
     },
 };
