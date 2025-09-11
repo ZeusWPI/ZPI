@@ -21,7 +21,7 @@ impl AuthHandler {
         let callback_url = config.zauth_callback;
         let zauth_client_id = config.zauth_client_id;
         Ok(Redirect::to(&format!(
-            "{zauth_url}/oauth/authorize?client_id={zauth_client_id}&response_type=code&state={zauth_state}&redirect_uri={callback_url}"
+            "{zauth_url}/oauth/authorize?client_id={zauth_client_id}&response_type=code&scope=roles&state={zauth_state}&redirect_uri={callback_url}"
         )))
     }
 
@@ -78,11 +78,11 @@ impl AuthHandler {
             .json::<ZauthUser>()
             .await?;
 
-        let user = db.users().create(zauth_user.into()).await?;
+        db.users().create(zauth_user.clone().into()).await?;
 
         session.clear().await;
         session
-            .insert("user", AuthenticatedUser::from(user))
+            .insert("user", AuthenticatedUser::from(zauth_user))
             .await?;
         Ok(Redirect::to(&config.frontend_url))
     }
@@ -99,10 +99,11 @@ pub struct ZauthToken {
     access_token: String,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Clone, Serialize, Deserialize, Debug)]
 pub struct ZauthUser {
     pub id: u32,
     pub username: String,
+    pub roles: Vec<String>,
 }
 
 impl From<ZauthUser> for UserCreatePayload {

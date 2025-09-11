@@ -11,6 +11,7 @@ impl TestObjects {
         AuthenticatedUser {
             id: 1,
             username: "cheese".into(),
+            admin: true,
         }
     }
 

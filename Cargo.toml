@@ -73,6 +73,7 @@ database = { path = "database" }
 http-body-util = "0.1.2"
 tower = { version = "0.4.13", default-features = false, features = ["util"] }
 mime = "0.3"
+test-log = "0.2.18"
 sqlx = { version = "0.8.6", default-features = false, features = [
     "runtime-tokio",
     "sqlite",

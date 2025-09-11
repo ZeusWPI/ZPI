@@ -2,11 +2,11 @@ use axum::{
     extract::{FromRequestParts, State},
     http::request::Parts,
 };
-use database::{Database, models::user::User};
+use database::Database;
 use serde::{Deserialize, Serialize};
 use tower_sessions::Session;
 
-use crate::{AppState, config::AppConfig, error::AppError};
+use crate::{AppState, config::AppConfig, error::AppError, handlers::auth::ZauthUser};
 
 pub mod auth;
 pub mod image;
@@ -17,6 +17,7 @@ pub mod version;
 pub struct AuthenticatedUser {
     pub id: u32,
     pub username: String,
+    pub admin: bool,
 }
 
 impl<S> FromRequestParts<S> for AuthenticatedUser
@@ -36,11 +37,14 @@ where
     }
 }
 
-impl From<User> for AuthenticatedUser {
-    fn from(user: User) -> Self {
+impl From<ZauthUser> for AuthenticatedUser {
+    fn from(user: ZauthUser) -> Self {
+        let admin =
+            user.roles.contains(&"bestuur".into()) || user.roles.contains(&"zpi_admin".into());
         Self {
             id: user.id,
             username: user.username,
+            admin,
         }
     }
 }
