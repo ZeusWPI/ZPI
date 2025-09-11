@@ -1,4 +1,5 @@
 use database::models::{
+    service::Service,
     tag::Tag,
     user::{User, UserProfile},
 };
@@ -68,6 +69,24 @@ impl TestObjects {
             name: "boekentoren".into(),
             category: "toren".into(),
             description: Some("Ik ben een boekentoren".into()),
+        }
+    }
+
+    pub fn services() -> Vec<Service> {
+        vec![Self::service_1(), Self::service_2()]
+    }
+
+    fn service_1() -> Service {
+        Service {
+            id: 1,
+            name: "zpi".to_string(),
+        }
+    }
+
+    fn service_2() -> Service {
+        Service {
+            id: 2,
+            name: "zodom".to_string(),
         }
     }
 }

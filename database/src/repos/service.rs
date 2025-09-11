@@ -11,10 +11,9 @@ impl<'a> ServiceRepo<'a> {
         Self { db }
     }
 
-    pub async fn all(&self) -> Result<Service, DatabaseError> {
-        sqlx::query_as("SELECT id, name FROM service;")
-            .fetch_optional(self.db)
-            .await?
-            .ok_or(DatabaseError::NotFound)
+    pub async fn all(&self) -> Result<Vec<Service>, DatabaseError> {
+        Ok(sqlx::query_as("SELECT id, name FROM service;")
+            .fetch_all(self.db)
+            .await?)
     }
 }
