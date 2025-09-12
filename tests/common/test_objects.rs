@@ -91,34 +91,35 @@ impl TestObjects {
         }
     }
 
-    pub fn achievement_1_2() -> Vec<AchievementPayload> {
-        vec![
-            AchievementPayload {
-                id: 1,
-                name: "Achievements".into(),
-                goals: vec![
-                    GoalPayload {
-                        id: 1,
-                        description: "Get 1 achievement".into(),
-                        sequence: 1,
-                    },
-                    GoalPayload {
-                        id: 2,
-                        description: "Get 2 achievements".into(),
-                        sequence: 2,
-                    },
-                ],
-            },
-            AchievementPayload {
-                id: 2,
-                name: "Profile Picture".into(),
-                goals: vec![GoalPayload {
-                    id: 3,
-                    description: "Upload a profile picture".into(),
+    pub fn achievement_1() -> AchievementPayload {
+        AchievementPayload {
+            id: 1,
+            name: "Achievements".into(),
+            goals: vec![
+                GoalPayload {
+                    id: 1,
+                    description: "Get 1 achievement".into(),
                     sequence: 1,
-                }],
-            },
-        ]
+                },
+                GoalPayload {
+                    id: 2,
+                    description: "Get 2 achievements".into(),
+                    sequence: 2,
+                },
+            ],
+        }
+    }
+
+    pub fn achievement_2() -> AchievementPayload {
+        AchievementPayload {
+            id: 2,
+            name: "Profile Picture".into(),
+            goals: vec![GoalPayload {
+                id: 3,
+                description: "Upload a profile picture".into(),
+                sequence: 1,
+            }],
+        }
     }
 
     pub fn achievement_3() -> AchievementPayload {
