@@ -22,7 +22,7 @@ impl<'a> AchievementRepo<'a> {
             "SELECT
                 achievement.id as achievement_id,
                 name as achievement_name,
-                service as service_id,
+                service_id,
                 goal.id as goal_id,
                 description as goal_description,
                 sequence as goal_sequence
@@ -30,9 +30,9 @@ impl<'a> AchievementRepo<'a> {
                 achievement
             INNER JOIN
                 goal
-                ON goal.achievement = achievement.id
+                ON goal.achievement_id = achievement.id
             WHERE
-                service = ?
+                service_id = ?
             ORDER BY
                 achievement_id, goal_sequence
             ;
