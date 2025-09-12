@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 use sqlx::prelude::FromRow;
 
+#[derive(Debug, FromRow)]
 pub struct Goal {
     pub id: u32,
     pub description: String,
@@ -8,6 +9,7 @@ pub struct Goal {
     pub sequence: u32,
 }
 
+#[derive(Debug, FromRow)]
 pub struct Achievement {
     pub id: u32,
     pub name: String,
@@ -36,4 +38,16 @@ pub struct AchievementPayload {
     pub id: i32,
     pub name: String,
     pub goals: Vec<GoalPayload>,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct GoalCreatePayload {
+    pub description: String,
+    pub sequence: u32,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct AchievementCreatePayload {
+    pub name: String,
+    pub goals: Vec<GoalCreatePayload>,
 }

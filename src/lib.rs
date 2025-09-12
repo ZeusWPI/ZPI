@@ -98,7 +98,7 @@ fn admin_routes() -> Router<AppState> {
         )
         .route(
             "/services/{id}/achievements",
-            get(AchievementHandler::get_for_service),
+            get(AchievementHandler::get_for_service).post(AchievementHandler::post_for_service),
         )
         .route_layer(from_extractor::<Admin>())
 }
