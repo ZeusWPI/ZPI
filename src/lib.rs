@@ -92,7 +92,10 @@ fn authenticated_routes() -> Router<AppState> {
 
 fn admin_routes() -> Router<AppState> {
     Router::new()
-        .route("/services", get(ServiceHandler::get))
+        .route(
+            "/services",
+            get(ServiceHandler::get).post(ServiceHandler::post),
+        )
         .route(
             "/services/{id}/achievements",
             get(AchievementHandler::get_for_service),

@@ -76,7 +76,7 @@ impl TestObjects {
         vec![Self::service_1(), Self::service_2()]
     }
 
-    fn service_1() -> Service {
+    pub fn service_1() -> Service {
         Service {
             id: 1,
             name: "zpi".to_string(),

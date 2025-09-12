@@ -94,6 +94,24 @@ impl AuthenticatedRouter {
             .await
             .unwrap()
     }
+
+    /// send a patch request to an endpoint on this router
+    ///
+    /// must have a leading "/"
+    pub async fn post<T: Serialize>(self, path: &str, body: T) -> Response<Body> {
+        self.router
+            .oneshot(
+                Request::builder()
+                    .method("POST")
+                    .uri(path)
+                    .header(header::COOKIE, &self.cookie)
+                    .header(header::CONTENT_TYPE, mime::APPLICATION_JSON.as_ref())
+                    .body(Json(body).into_response().into_body())
+                    .unwrap(),
+            )
+            .await
+            .unwrap()
+    }
 }
 pub struct UnauthenticatedRouter {
     router: Router,
