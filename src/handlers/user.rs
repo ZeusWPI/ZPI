@@ -25,9 +25,7 @@ impl UserHandler {
         Path(user_id_or_name): Path<String>,
         db: Database,
     ) -> Result<Json<UserProfile>, AppError> {
-        Ok(Json(dbg!(
-            db.users().profile(user_id_or_name.into()).await
-        )?))
+        Ok(Json(db.users().profile(user_id_or_name.into()).await?))
     }
 
     async fn patch(
