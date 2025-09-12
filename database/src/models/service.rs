@@ -6,3 +6,8 @@ pub struct Service {
     pub id: u32,
     pub name: String,
 }
+
+#[derive(Serialize, Deserialize)]
+pub struct ServiceCreatePayload {
+    pub name: String,
+}
