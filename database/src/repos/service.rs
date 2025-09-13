@@ -2,7 +2,7 @@ use sqlx::SqlitePool;
 
 use crate::{
     error::DatabaseError,
-    models::service::{Service, ServiceCreatePayload},
+    models::service::{Service, ServiceCreatePayload, ServicePatchPayload},
 };
 
 pub struct ServiceRepo<'a> {
@@ -28,6 +28,24 @@ impl<'a> ServiceRepo<'a> {
        ",
         )
         .bind(service.name)
+        .fetch_optional(self.db)
+        .await?
+        .ok_or(DatabaseError::NotFound)
+    }
+
+    pub async fn patch(
+        &self,
+        service_id: u32,
+        patch_service: ServicePatchPayload,
+    ) -> Result<Service, DatabaseError> {
+        sqlx::query_as(
+            "
+        UPDATE service SET name = ? WHERE id = ?
+        RETURNING id, name
+        ",
+        )
+        .bind(patch_service.name)
+        .bind(service_id)
         .fetch_optional(self.db)
         .await?
         .ok_or(DatabaseError::NotFound)

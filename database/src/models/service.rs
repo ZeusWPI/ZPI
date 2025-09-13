@@ -11,3 +11,8 @@ pub struct Service {
 pub struct ServiceCreatePayload {
     pub name: String,
 }
+
+#[derive(Serialize, Deserialize)]
+pub struct ServicePatchPayload {
+    pub name: String,
+}
