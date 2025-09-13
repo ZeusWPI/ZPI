@@ -1,4 +1,4 @@
-use database::models::service::{Service, ServiceCreatePayload};
+use database::models::service::{Service, ServiceCreatePayload, ServicePatchPayload};
 use reqwest::StatusCode;
 use sqlx::SqlitePool;
 
@@ -35,4 +35,23 @@ async fn create_service(db_pool: SqlitePool) {
     let service_response: Service = response.into_struct().await;
 
     assert_eq!(service_response, TestObjects::service_1());
+}
+
+#[sqlx::test(fixtures("services"))]
+#[test_log::test]
+async fn patch_service(db_pool: SqlitePool) {
+    let new_name = "gamification2";
+    let router = AuthenticatedRouter::new(db_pool).await;
+    let body = ServicePatchPayload {
+        name: new_name.to_string(),
+    };
+    let response = router.patch("/services/1", body).await;
+
+    assert_eq!(response.status(), StatusCode::OK);
+
+    let service_response: Service = response.into_struct().await;
+
+    let mut expected_service = TestObjects::service_1();
+    expected_service.name = new_name.to_string();
+    assert_eq!(service_response, expected_service);
 }

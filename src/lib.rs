@@ -2,7 +2,7 @@ use axum::{
     Router,
     extract::DefaultBodyLimit,
     middleware::from_extractor,
-    routing::{get, post},
+    routing::{get, patch, post},
 };
 use database::Database;
 use reqwest::StatusCode;
@@ -96,6 +96,7 @@ fn admin_routes() -> Router<AppState> {
             "/services",
             get(ServiceHandler::get).post(ServiceHandler::post),
         )
+        .route("/services/{id}", patch(ServiceHandler::patch))
         .route(
             "/services/{id}/achievements",
             get(AchievementHandler::get_for_service).post(AchievementHandler::post_for_service),
