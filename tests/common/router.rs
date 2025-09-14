@@ -7,7 +7,7 @@ use axum::{
     response::{IntoResponse, Response},
 };
 use database::Database;
-use reqwest::header;
+use reqwest::{Method, header};
 use serde::Serialize;
 use sqlx::SqlitePool;
 use tower::ServiceExt;
@@ -65,52 +65,44 @@ impl AuthenticatedRouter {
     ///
     /// must have a leading "/"
     pub async fn get(self, path: &str) -> Response<Body> {
-        self.router
-            .oneshot(
-                Request::builder()
-                    .uri(path)
-                    .header(header::COOKIE, &self.cookie)
-                    .body(Body::empty())
-                    .unwrap(),
-            )
-            .await
-            .unwrap()
+        self.request(Method::GET, path, None::<()>).await
     }
 
     /// send a patch request to an endpoint on this router
     ///
     /// must have a leading "/"
     pub async fn patch<T: Serialize>(self, path: &str, body: T) -> Response<Body> {
-        self.router
-            .oneshot(
-                Request::builder()
-                    .method("PATCH")
-                    .uri(path)
-                    .header(header::COOKIE, &self.cookie)
-                    .header(header::CONTENT_TYPE, mime::APPLICATION_JSON.as_ref())
-                    .body(Json(body).into_response().into_body())
-                    .unwrap(),
-            )
-            .await
-            .unwrap()
+        self.request(Method::PATCH, path, Some(body)).await
     }
 
     /// send a patch request to an endpoint on this router
     ///
     /// must have a leading "/"
     pub async fn post<T: Serialize>(self, path: &str, body: T) -> Response<Body> {
-        self.router
-            .oneshot(
-                Request::builder()
-                    .method("POST")
-                    .uri(path)
-                    .header(header::COOKIE, &self.cookie)
-                    .header(header::CONTENT_TYPE, mime::APPLICATION_JSON.as_ref())
-                    .body(Json(body).into_response().into_body())
-                    .unwrap(),
-            )
-            .await
-            .unwrap()
+        self.request(Method::POST, path, Some(body)).await
+    }
+
+    /// send a request to an endpoint on this router
+    ///
+    /// must have a leading "/"
+    async fn request<T: Serialize>(
+        self,
+        method: Method,
+        path: &str,
+        body: Option<T>,
+    ) -> Response<Body> {
+        let request_builder = Request::builder()
+            .method(method)
+            .uri(path)
+            .header(header::COOKIE, &self.cookie);
+
+        let request = match body {
+            Some(body) => request_builder
+                .header(header::CONTENT_TYPE, mime::APPLICATION_JSON.as_ref())
+                .body(Json(body).into_response().into_body()),
+            None => request_builder.body(Body::empty()),
+        };
+        self.router.oneshot(request.unwrap()).await.unwrap()
     }
 }
 pub struct UnauthenticatedRouter {
