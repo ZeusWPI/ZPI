@@ -1,10 +1,10 @@
 <script lang="ts">
-	import Profile from '$lib/components/profile-components/Profile.svelte';
 	import { createQuery } from '@tanstack/svelte-query';
 	import type { CreateQueryResult } from '@tanstack/svelte-query';
 	import Navbar from '$lib/components/Navbar.svelte';
 	import Footer from '$lib/components/Footer.svelte';
 	import { type CurrentUser, getCurrentUser } from '$lib/globalFunctions-Types';
+	import AchievementDisplay from '$lib/components/achievements/AchievementDisplay.svelte';
 
 	let query: CreateQueryResult<CurrentUser> = createQuery({
 			queryKey: ['currentUser'],
@@ -15,7 +15,7 @@
 <div class="flex flex-col min-h-screen bg-white">
 	<Navbar username={$query.data?.username || ""} />
 	{#if $query.isSuccess}
-		<Profile username={$query.data.username} editAllowed={true} />
+		<AchievementDisplay />
 		<div class="grow"></div>
 	{:else if $query.isLoading}
 		<h1 class="flex flex-row justify-center items-center text-center grow text-5xl">
