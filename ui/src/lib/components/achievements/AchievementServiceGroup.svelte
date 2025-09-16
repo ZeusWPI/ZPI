@@ -24,7 +24,7 @@
 {#if $query.isSuccess}
 	<div class="w-full md:w-4/5">
 		<button
-			class="flex flex-row justify-between items-center w-full px-10 py-4 font-bold text-lg"
+			class="flex flex-row justify-between items-center w-full px-10 py-4 font-bold text-lg md:text-2xl"
 			onclick={toggle}
 			tabindex="0"
 		>
