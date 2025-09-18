@@ -33,8 +33,10 @@ async fn create_service(db_pool: SqlitePool) {
     assert_eq!(response.status(), StatusCode::OK);
 
     let service_response: Service = response.into_struct().await;
+    assert_eq!(service_response.id, TestObjects::service_1().id);
+    assert_eq!(service_response.name, TestObjects::service_1().name);
 
-    assert_eq!(service_response, TestObjects::service_1());
+    assert_eq!(service_response.api_key.len(), 44);
 }
 
 #[sqlx::test(fixtures("services"))]
