@@ -2,9 +2,9 @@ use database::models::{
     achievement::{AchievementPayload, GoalPayload},
     service::Service,
     tag::Tag,
-    user::{User, UserProfile},
+    user::User,
 };
-use zpi::extractors::AuthenticatedUser;
+use zpi::{dto::user::UserProfile, extractors::AuthenticatedUser};
 
 pub struct TestObjects;
 

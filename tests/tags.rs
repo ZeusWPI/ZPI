@@ -1,6 +1,6 @@
-use database::models::user::UserProfile;
 use reqwest::StatusCode;
 use sqlx::SqlitePool;
+use zpi::dto::user::UserProfile;
 
 use crate::common::{
     into_struct::IntoStruct, router::AuthenticatedRouter, test_objects::TestObjects,

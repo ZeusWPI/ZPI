@@ -1,7 +1,7 @@
-use database::models::user::{User, UserPatchPayload, UserProfile};
+use database::models::user::{User, UserPatch};
 use reqwest::StatusCode;
 use sqlx::SqlitePool;
-use zpi::extractors::AuthenticatedUser;
+use zpi::{dto::user::UserProfile, extractors::AuthenticatedUser};
 
 use crate::common::{
     into_struct::IntoStruct,
@@ -34,7 +34,7 @@ async fn get_users_me_unauthenticated(db_pool: SqlitePool) {
 #[test_log::test]
 async fn patch_user(db_pool: SqlitePool) {
     let router = AuthenticatedRouter::new(db_pool).await;
-    let body = UserPatchPayload {
+    let body = UserPatch {
         about: "Changed about".to_string(),
     };
     let response = router.patch("/users/1", body).await;
