@@ -15,6 +15,7 @@ export type ProfileData = {
 export type CurrentUser = {
 	id: number;
 	username: string;
+	admin: boolean;
 };
 
 export type AchievementService = {

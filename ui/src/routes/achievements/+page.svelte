@@ -15,7 +15,7 @@
 <div class="flex flex-col min-h-screen bg-white">
 	<Navbar username={$query.data?.username || ""} />
 	{#if $query.isSuccess}
-		<AchievementDisplay />
+		<AchievementDisplay admin={$query.data.admin} />
 		<div class="grow"></div>
 	{:else if $query.isLoading}
 		<h1 class="flex flex-row justify-center items-center text-center grow text-5xl">
