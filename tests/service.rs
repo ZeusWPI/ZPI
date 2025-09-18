@@ -1,6 +1,6 @@
-use database::models::service::{Service, ServiceCreatePayload, ServicePatchPayload};
 use reqwest::StatusCode;
 use sqlx::SqlitePool;
+use zpi::dto::service::{ServiceCreatePayload, ServicePatchPayload, ServicePayloadAdmin};
 
 use crate::common::{
     into_struct::IntoStruct, router::AuthenticatedRouter, test_objects::TestObjects,
@@ -16,7 +16,7 @@ async fn get_all_services(db_pool: SqlitePool) {
 
     assert_eq!(response.status(), StatusCode::OK);
 
-    let data: Vec<Service> = response.into_struct().await;
+    let data: Vec<ServicePayloadAdmin> = response.into_struct().await;
 
     assert_eq!(data, TestObjects::services())
 }
@@ -32,7 +32,7 @@ async fn create_service(db_pool: SqlitePool) {
 
     assert_eq!(response.status(), StatusCode::OK);
 
-    let service_response: Service = response.into_struct().await;
+    let service_response: ServicePayloadAdmin = response.into_struct().await;
     assert_eq!(service_response.id, TestObjects::service_1().id);
     assert_eq!(service_response.name, TestObjects::service_1().name);
 
@@ -51,7 +51,7 @@ async fn patch_service(db_pool: SqlitePool) {
 
     assert_eq!(response.status(), StatusCode::OK);
 
-    let service_response: Service = response.into_struct().await;
+    let service_response: ServicePayloadAdmin = response.into_struct().await;
 
     let mut expected_service = TestObjects::service_1();
     expected_service.name = new_name.to_string();

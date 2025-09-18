@@ -1,10 +1,10 @@
 use axum::{Json, extract::Path};
-use database::{
-    Database,
-    models::achievement::{AchievementCreatePayload, AchievementPayload},
-};
+use database::Database;
 
-use crate::error::AppError;
+use crate::{
+    dto::achievement::{AchievementCreatePayload, AchievementPayload},
+    error::AppError,
+};
 
 pub struct AchievementHandler;
 
@@ -13,7 +13,9 @@ impl AchievementHandler {
         db: Database,
         Path(service_id): Path<u32>,
     ) -> Result<Json<Vec<AchievementPayload>>, AppError> {
-        Ok(Json(db.achievements().for_service(service_id).await?))
+        Ok(Json(
+            AchievementPayload::for_service(&db, service_id).await?,
+        ))
     }
 
     pub async fn post_for_service(
@@ -27,10 +29,6 @@ impl AchievementHandler {
             ));
         }
 
-        Ok(Json(
-            db.achievements()
-                .create_for_service(service_id, achievement)
-                .await?,
-        ))
+        Ok(Json(achievement.create(service_id, &db).await?))
     }
 }

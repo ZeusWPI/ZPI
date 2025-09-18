@@ -1,10 +1,11 @@
-use database::models::{
-    achievement::{AchievementPayload, GoalPayload},
-    service::Service,
-    tag::Tag,
-    user::User,
+use database::models::{tag::Tag, user::User};
+use zpi::{
+    dto::{
+        achievement::AchievementPayload, goal::GoalPayload, service::ServicePayloadAdmin,
+        user::UserProfile,
+    },
+    extractors::AuthenticatedUser,
 };
-use zpi::{dto::user::UserProfile, extractors::AuthenticatedUser};
 
 pub struct TestObjects;
 
@@ -73,20 +74,20 @@ impl TestObjects {
         }
     }
 
-    pub fn services() -> Vec<Service> {
+    pub fn services() -> Vec<ServicePayloadAdmin> {
         vec![Self::service_1(), Self::service_2()]
     }
 
-    pub fn service_1() -> Service {
-        Service {
+    pub fn service_1() -> ServicePayloadAdmin {
+        ServicePayloadAdmin {
             id: 1,
             name: "zpi".to_string(),
             api_key: "apikey".to_string(),
         }
     }
 
-    fn service_2() -> Service {
-        Service {
+    fn service_2() -> ServicePayloadAdmin {
+        ServicePayloadAdmin {
             id: 2,
             name: "zodom".to_string(),
             api_key: "apikey".to_string(),
