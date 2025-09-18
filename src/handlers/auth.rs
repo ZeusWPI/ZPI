@@ -2,7 +2,7 @@ use axum::{
     extract::{Query, rejection::QueryRejection},
     response::{IntoResponse, Redirect},
 };
-use database::{Database, models::user::UserCreatePayload};
+use database::{Database, models::user::UserCreate};
 use rand::distr::{Alphanumeric, SampleString};
 use serde::{Deserialize, Serialize};
 use tower_sessions::Session;
@@ -108,7 +108,7 @@ pub struct ZauthUser {
     pub roles: Vec<String>,
 }
 
-impl From<ZauthUser> for UserCreatePayload {
+impl From<ZauthUser> for UserCreate {
     fn from(value: ZauthUser) -> Self {
         Self {
             id: value.id,
