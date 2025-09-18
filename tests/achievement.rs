@@ -1,8 +1,9 @@
-use database::models::achievement::{
-    AchievementCreatePayload, AchievementPayload, GoalCreatePayload,
-};
 use reqwest::StatusCode;
 use sqlx::SqlitePool;
+use zpi::dto::{
+    achievement::{AchievementCreatePayload, AchievementPayload},
+    goal::GoalCreatePayload,
+};
 
 use crate::common::{
     into_struct::IntoStruct, router::AuthenticatedRouter, test_objects::TestObjects,

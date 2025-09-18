@@ -26,28 +26,14 @@ pub struct AchievementGoal {
     pub goal_sequence: i32,
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
-pub struct GoalPayload {
-    pub id: i32,
-    pub description: String,
-    pub sequence: i32,
-}
-
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
-pub struct AchievementPayload {
-    pub id: i32,
-    pub name: String,
-    pub goals: Vec<GoalPayload>,
-}
-
 #[derive(Serialize, Deserialize)]
-pub struct GoalCreatePayload {
+pub struct GoalCreate {
     pub description: String,
     pub sequence: u32,
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct AchievementCreatePayload {
+pub struct AchievementCreate {
     pub name: String,
-    pub goals: Vec<GoalCreatePayload>,
+    pub goals: Vec<GoalCreate>,
 }

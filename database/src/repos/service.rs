@@ -3,7 +3,7 @@ use sqlx::SqlitePool;
 
 use crate::{
     error::DatabaseError,
-    models::service::{Service, ServiceCreatePayload, ServicePatchPayload},
+    models::service::{Service, ServiceCreate, ServicePatch},
 };
 
 pub struct ServiceRepo<'a> {
@@ -21,7 +21,7 @@ impl<'a> ServiceRepo<'a> {
             .await?)
     }
 
-    pub async fn create(&self, service: ServiceCreatePayload) -> Result<Service, DatabaseError> {
+    pub async fn create(&self, service: ServiceCreate) -> Result<Service, DatabaseError> {
         let mut api_key = [0u8; 32];
         rand::rng().fill_bytes(&mut api_key);
         let api_key = base_62::encode(&api_key);
@@ -42,7 +42,7 @@ impl<'a> ServiceRepo<'a> {
     pub async fn patch(
         &self,
         service_id: u32,
-        patch_service: ServicePatchPayload,
+        patch_service: ServicePatch,
     ) -> Result<Service, DatabaseError> {
         sqlx::query_as(
             "
