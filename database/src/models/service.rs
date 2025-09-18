@@ -5,6 +5,7 @@ use sqlx::prelude::FromRow;
 pub struct Service {
     pub id: u32,
     pub name: String,
+    pub api_key: String,
 }
 
 #[derive(Serialize, Deserialize)]

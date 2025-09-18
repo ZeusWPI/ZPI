@@ -1,3 +1,4 @@
+use rand::RngCore;
 use sqlx::SqlitePool;
 
 use crate::{
@@ -15,19 +16,24 @@ impl<'a> ServiceRepo<'a> {
     }
 
     pub async fn all(&self) -> Result<Vec<Service>, DatabaseError> {
-        Ok(sqlx::query_as("SELECT id, name FROM service;")
+        Ok(sqlx::query_as("SELECT id, name, api_key FROM service;")
             .fetch_all(self.db)
             .await?)
     }
 
     pub async fn create(&self, service: ServiceCreatePayload) -> Result<Service, DatabaseError> {
+        let mut api_key = [0u8; 32];
+        rand::rng().fill_bytes(&mut api_key);
+        let api_key = base_62::encode(&api_key);
+
         sqlx::query_as(
             "
-       INSERT INTO service (name) VALUES (?)
-       RETURNING id, name;
+       INSERT INTO service (name, api_key) VALUES (?, ?)
+       RETURNING id, name, api_key;
        ",
         )
         .bind(service.name)
+        .bind(api_key)
         .fetch_optional(self.db)
         .await?
         .ok_or(DatabaseError::NotFound)
@@ -41,7 +47,7 @@ impl<'a> ServiceRepo<'a> {
         sqlx::query_as(
             "
         UPDATE service SET name = ? WHERE id = ?
-        RETURNING id, name
+        RETURNING id, name, api_key
         ",
         )
         .bind(patch_service.name)

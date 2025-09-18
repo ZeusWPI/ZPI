@@ -1,5 +1,5 @@
 INSERT INTO service
-    (id, name)
+    (id, name, api_key)
 VALUES
-    (1, 'zpi'),
-    (2, 'zodom');
+    (1, 'zpi', 'apikey'),
+    (2, 'zodom', 'apikey');

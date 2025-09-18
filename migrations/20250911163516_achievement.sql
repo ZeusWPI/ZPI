@@ -1,6 +1,7 @@
 CREATE TABLE service (
     id INTEGER PRIMARY KEY NOT NULL,
-    name TEXT NOT NULL
+    name TEXT NOT NULL,
+    api_key TEXT NOT NULL
 );
 
 CREATE TABLE achievement (

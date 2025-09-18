@@ -81,6 +81,7 @@ impl TestObjects {
         Service {
             id: 1,
             name: "zpi".to_string(),
+            api_key: "apikey".to_string(),
         }
     }
 
@@ -88,6 +89,7 @@ impl TestObjects {
         Service {
             id: 2,
             name: "zodom".to_string(),
+            api_key: "apikey".to_string(),
         }
     }
 
