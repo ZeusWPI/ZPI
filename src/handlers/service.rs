@@ -1,16 +1,22 @@
 use axum::{Json, extract::Path};
-use database::{Database, models::service::Service};
+use database::Database;
 
 use crate::{
-    dto::service::{ServiceCreatePayload, ServicePatchPayload, ServicePayloadAdmin},
+    dto::service::{
+        ServiceCreatePayload, ServicePatchPayload, ServicePayloadAdmin, ServicePayloadUser,
+    },
     error::AppError,
 };
 
 pub struct ServiceHandler;
 
 impl ServiceHandler {
-    pub async fn get(db: Database) -> Result<Json<Vec<Service>>, AppError> {
-        Ok(Json(db.services().all().await?))
+    pub async fn get_admin(db: Database) -> Result<Json<Vec<ServicePayloadAdmin>>, AppError> {
+        Ok(Json(ServicePayloadAdmin::all(&db).await?))
+    }
+
+    pub async fn get_user(db: Database) -> Result<Json<Vec<ServicePayloadUser>>, AppError> {
+        Ok(Json(ServicePayloadUser::all(&db).await?))
     }
 
     pub async fn post(

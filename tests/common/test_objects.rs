@@ -1,7 +1,9 @@
 use database::models::{tag::Tag, user::User};
 use zpi::{
     dto::{
-        achievement::AchievementPayload, goal::GoalPayload, service::ServicePayloadAdmin,
+        achievement::AchievementPayload,
+        goal::GoalPayload,
+        service::{ServicePayloadAdmin, ServicePayloadUser},
         user::UserProfile,
     },
     extractors::AuthenticatedUser,
@@ -74,11 +76,11 @@ impl TestObjects {
         }
     }
 
-    pub fn services() -> Vec<ServicePayloadAdmin> {
-        vec![Self::service_1(), Self::service_2()]
+    pub fn admin_services() -> Vec<ServicePayloadAdmin> {
+        vec![Self::admin_service_1(), Self::admin_service_2()]
     }
 
-    pub fn service_1() -> ServicePayloadAdmin {
+    pub fn admin_service_1() -> ServicePayloadAdmin {
         ServicePayloadAdmin {
             id: 1,
             name: "zpi".to_string(),
@@ -86,11 +88,29 @@ impl TestObjects {
         }
     }
 
-    fn service_2() -> ServicePayloadAdmin {
+    fn admin_service_2() -> ServicePayloadAdmin {
         ServicePayloadAdmin {
             id: 2,
             name: "zodom".to_string(),
             api_key: "apikey".to_string(),
+        }
+    }
+
+    pub fn services() -> Vec<ServicePayloadUser> {
+        vec![Self::service_1(), Self::service_2()]
+    }
+
+    pub fn service_1() -> ServicePayloadUser {
+        ServicePayloadUser {
+            id: 1,
+            name: "zpi".to_string(),
+        }
+    }
+
+    fn service_2() -> ServicePayloadUser {
+        ServicePayloadUser {
+            id: 2,
+            name: "zodom".to_string(),
         }
     }
 

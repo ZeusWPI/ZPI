@@ -23,6 +23,44 @@ impl From<Service> for ServicePayloadAdmin {
     }
 }
 
+impl ServicePayloadAdmin {
+    pub async fn all(db: &Database) -> Result<Vec<Self>, AppError> {
+        Ok(db
+            .services()
+            .all()
+            .await?
+            .into_iter()
+            .map(|service| service.into())
+            .collect())
+    }
+}
+#[derive(Debug, Serialize, Deserialize, PartialEq)]
+pub struct ServicePayloadUser {
+    pub id: u32,
+    pub name: String,
+}
+
+impl From<Service> for ServicePayloadUser {
+    fn from(value: Service) -> Self {
+        Self {
+            id: value.id,
+            name: value.name,
+        }
+    }
+}
+
+impl ServicePayloadUser {
+    pub async fn all(db: &Database) -> Result<Vec<Self>, AppError> {
+        Ok(db
+            .services()
+            .all()
+            .await?
+            .into_iter()
+            .map(|service| service.into())
+            .collect())
+    }
+}
+
 #[derive(Serialize, Deserialize)]
 pub struct ServiceCreatePayload {
     pub name: String,
