@@ -89,13 +89,14 @@ fn authenticated_routes() -> Router<AppState> {
             post(ImageHandler::post).delete(ImageHandler::delete),
         )
         .route_layer(from_extractor::<AuthenticatedUser>())
+        .route("/services", get(ServiceHandler::get_user))
 }
 
 fn admin_routes() -> Router<AppState> {
     Router::new()
         .route(
             "/services",
-            get(ServiceHandler::get).post(ServiceHandler::post),
+            get(ServiceHandler::get_admin).post(ServiceHandler::post),
         )
         .route("/services/{id}", patch(ServiceHandler::patch))
         .route(
