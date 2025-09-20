@@ -68,7 +68,7 @@ pub fn api_router() -> Router<AppState> {
     Router::new()
         .merge(open_routes())
         .merge(authenticated_routes())
-        .merge(admin_routes())
+        .nest("/admin", admin_routes())
         .fallback(get(|| async { StatusCode::NOT_FOUND }))
 }
 

@@ -15,7 +15,7 @@ mod common;
 #[test_log::test]
 async fn get_achievements_for_service(db_pool: SqlitePool) {
     let router = AuthenticatedRouter::new(db_pool).await;
-    let response = router.get("/services/1/achievements").await;
+    let response = router.get("/admin/services/1/achievements").await;
 
     assert_eq!(response.status(), StatusCode::OK);
 
@@ -44,7 +44,7 @@ async fn post_achievements_for_service(db_pool: SqlitePool) {
             },
         ],
     };
-    let response = router.post("/services/1/achievements", body).await;
+    let response = router.post("/admin/services/1/achievements", body).await;
 
     assert_eq!(response.status(), StatusCode::OK);
 
