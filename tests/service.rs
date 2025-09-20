@@ -12,7 +12,7 @@ mod common;
 #[test_log::test]
 async fn get_all_services(db_pool: SqlitePool) {
     let router = AuthenticatedRouter::new(db_pool).await;
-    let response = router.get("/services").await;
+    let response = router.get("/admin/services").await;
 
     assert_eq!(response.status(), StatusCode::OK);
 
@@ -28,7 +28,7 @@ async fn create_service(db_pool: SqlitePool) {
     let body = ServiceCreatePayload {
         name: "zpi".to_string(),
     };
-    let response = router.post("/services", body).await;
+    let response = router.post("/admin/services", body).await;
 
     assert_eq!(response.status(), StatusCode::OK);
 
@@ -47,7 +47,7 @@ async fn patch_service(db_pool: SqlitePool) {
     let body = ServicePatchPayload {
         name: new_name.to_string(),
     };
-    let response = router.patch("/services/1", body).await;
+    let response = router.patch("/admin/services/1", body).await;
 
     assert_eq!(response.status(), StatusCode::OK);
 
