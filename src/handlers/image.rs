@@ -33,7 +33,7 @@ impl ImageHandler {
         // get closest size that is bigger, or largest if none are bigger
         let size = *SIZES
             .iter()
-            .filter(|x| **x > requested_size)
+            .filter(|x| **x >= requested_size)
             .min()
             .unwrap_or(&MAX_SIZE);
 
