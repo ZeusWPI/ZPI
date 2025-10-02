@@ -30,10 +30,10 @@ impl ImageHandler {
     ) -> Result<Response, AppError> {
         // default size
         let requested_size = params.size.unwrap_or(256);
-        // get closest size that is bigger, or largest if none are bigger
+        // get next larger size if size is not available, or largest if none are bigger
         let size = *SIZES
             .iter()
-            .filter(|x| **x > requested_size)
+            .filter(|x| **x >= requested_size)
             .min()
             .unwrap_or(&MAX_SIZE);
 
