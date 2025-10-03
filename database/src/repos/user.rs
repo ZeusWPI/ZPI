@@ -2,8 +2,7 @@ use sqlx::SqlitePool;
 
 use crate::{
     error::DatabaseError,
-    models::user::{User, UserCreatePayload, UserId, UserPatchPayload, UserProfile},
-    repos::tag::TagRepo,
+    models::user::{User, UserCreate, UserPatch},
 };
 
 pub struct UserRepo<'a> {
@@ -15,7 +14,7 @@ impl<'a> UserRepo<'a> {
         Self { db }
     }
 
-    pub(crate) async fn by_id(&self, id: u32) -> Result<User, DatabaseError> {
+    pub async fn by_id(&self, id: u32) -> Result<User, DatabaseError> {
         sqlx::query_as("SELECT id, username, about FROM user WHERE id == ? LIMIT 1;")
             .bind(id)
             .fetch_optional(self.db)
@@ -23,7 +22,7 @@ impl<'a> UserRepo<'a> {
             .ok_or(DatabaseError::NotFound)
     }
 
-    pub(crate) async fn by_username(&self, username: String) -> Result<User, DatabaseError> {
+    pub async fn by_username(&self, username: String) -> Result<User, DatabaseError> {
         sqlx::query_as("SELECT id, username, about FROM user WHERE username == ? LIMIT 1;")
             .bind(username)
             .fetch_optional(self.db)
@@ -31,7 +30,7 @@ impl<'a> UserRepo<'a> {
             .ok_or(DatabaseError::NotFound)
     }
 
-    pub async fn create(&self, user: UserCreatePayload) -> Result<User, DatabaseError> {
+    pub async fn create(&self, user: UserCreate) -> Result<User, DatabaseError> {
         sqlx::query_as(
             "
         INSERT INTO user (id, username) VALUES (?, ?)
@@ -47,26 +46,7 @@ impl<'a> UserRepo<'a> {
         .ok_or(DatabaseError::NotFound)
     }
 
-    pub async fn profile(&self, user_id: UserId) -> Result<UserProfile, DatabaseError> {
-        let user = match user_id {
-            UserId::Username(username) => self.by_username(username).await?,
-            UserId::Id(id) => self.by_id(id).await?,
-        };
-        let tags = TagRepo::new(self.db).for_user(user.id).await?;
-
-        Ok(UserProfile {
-            id: user.id,
-            username: user.username,
-            about: user.about,
-            tags,
-        })
-    }
-
-    pub async fn patch(
-        &self,
-        user_id: u32,
-        patch_user: UserPatchPayload,
-    ) -> Result<User, DatabaseError> {
+    pub async fn patch(&self, user_id: u32, patch_user: UserPatch) -> Result<User, DatabaseError> {
         sqlx::query_as(
             "
         UPDATE user SET about = ? WHERE id = ?

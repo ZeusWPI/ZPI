@@ -1,11 +1,13 @@
+use crate::dto::user::UserProfile;
 use axum::extract::Path;
 use axum::{Json, Router, routing::get};
 use database::Database;
-use database::models::user::UserProfile;
-use database::models::user::{User, UserPatchPayload};
+use database::models::user::User;
 
 use crate::AppState;
-use crate::{error::AppError, handlers::AuthenticatedUser};
+use crate::dto::user::UserPatchPayload;
+use crate::error::AppError;
+use crate::extractors::authenticated_user::AuthenticatedUser;
 
 pub struct UserHandler;
 
@@ -24,7 +26,7 @@ impl UserHandler {
         Path(user_id_or_name): Path<String>,
         db: Database,
     ) -> Result<Json<UserProfile>, AppError> {
-        Ok(Json(db.users().profile(user_id_or_name.into()).await?))
+        Ok(Json(UserProfile::get(&db, user_id_or_name.into()).await?))
     }
 
     async fn patch(
@@ -37,6 +39,6 @@ impl UserHandler {
             return Err(AppError::Forbidden);
         }
 
-        Ok(Json(db.users().patch(user_id, payload).await?))
+        Ok(Json(db.users().patch(user_id, payload.into()).await?))
     }
 }

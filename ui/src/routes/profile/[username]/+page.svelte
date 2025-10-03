@@ -17,7 +17,7 @@
 
 </script>
 
-<div class="flex flex-col min-h-screen">
+<div class="flex flex-col min-h-screen bg-white">
 	<Navbar username={$query.data?.username || "" } />
 
 	{#if $query.isSuccess}
