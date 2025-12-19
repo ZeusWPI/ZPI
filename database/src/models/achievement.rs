@@ -1,3 +1,4 @@
+use chrono::{DateTime, Local};
 use serde::{Deserialize, Serialize};
 use sqlx::prelude::FromRow;
 
@@ -24,6 +25,17 @@ pub struct AchievementGoal {
     pub goal_id: i32,
     pub goal_description: String,
     pub goal_sequence: i32,
+}
+
+#[derive(Debug, Serialize, Deserialize, FromRow)]
+pub struct AchievementGoalUnlock {
+    pub achievement_id: i32,
+    pub achievement_name: String,
+    pub service_id: i32,
+    pub goal_id: i32,
+    pub goal_description: String,
+    pub goal_sequence: i32,
+    pub unlocked_at: Option<DateTime<Local>>,
 }
 
 #[derive(Serialize, Deserialize)]
