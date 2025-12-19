@@ -1,4 +1,4 @@
-use std::{path::PathBuf, sync::Arc};
+use std::{clone, path::PathBuf, sync::Arc};
 
 use axum::{
     Json, Router,
@@ -16,6 +16,7 @@ use zpi::{
     AppState, api_router, config::AppConfig, extractors::authenticated_user::AuthenticatedUser,
 };
 
+#[derive(Clone)]
 pub struct AuthenticatedRouter {
     router: Router,
     cookie: String,
