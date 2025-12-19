@@ -1,4 +1,5 @@
 use reqwest::StatusCode;
+use serde::Deserialize;
 use sqlx::SqlitePool;
 use zpi::dto::service::{
     ServiceCreatePayload, ServicePatchPayload, ServicePayloadAdmin, ServicePayloadUser,
@@ -34,6 +35,24 @@ async fn get_all_services(db_pool: SqlitePool) {
     let data: Vec<ServicePayloadUser> = response.into_struct().await;
 
     assert_eq!(data, TestObjects::services())
+}
+
+#[derive(Deserialize)]
+struct ApiKey {
+    api_key: Option<String>,
+}
+
+#[sqlx::test(fixtures("services"))]
+#[test_log::test]
+async fn users_dont_see_api_key(db_pool: SqlitePool) {
+    let router = AuthenticatedRouter::new(db_pool).await;
+    let response = router.get("/services").await;
+
+    assert_eq!(response.status(), StatusCode::OK);
+
+    let data: Vec<ApiKey> = response.into_struct().await;
+
+    assert!(data.into_iter().all(|x| x.api_key.is_none()))
 }
 
 #[sqlx::test]
