@@ -7,7 +7,7 @@ use database::{
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    dto::goal::{GoalCreatePayload, GoalPayload},
+    dto::goal::{GoalCreatePayload, GoalPayload, GoalUnlockedPayload},
     error::AppError,
 };
 
@@ -34,6 +34,17 @@ impl AchievementPayload {
 
         Ok(achievements)
     }
+}
+
+#[derive(Serialize, Deserialize, Debug, PartialEq)]
+pub struct AchievementUnlockedPayload {
+    pub id: i32,
+    pub name: String,
+    pub goals: Vec<GoalUnlockedPayload>,
+}
+
+impl AchievementUnlockedPayload {
+    // TODO unlock goal
 }
 
 #[derive(Serialize, Deserialize)]
