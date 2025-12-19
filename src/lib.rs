@@ -103,6 +103,7 @@ fn admin_routes() -> Router<AppState> {
             "/services/{id}/achievements",
             get(AchievementHandler::get_for_service).post(AchievementHandler::post_for_service),
         )
+        .route("/services/{id}/apikey", post(ServiceHandler::api_key))
         .route_layer(from_extractor::<Admin>())
 }
 

@@ -91,3 +91,16 @@ async fn patch_service(db_pool: SqlitePool) {
     expected_service.name = new_name.to_string();
     assert_eq!(service_response, expected_service);
 }
+
+#[sqlx::test(fixtures("services"))]
+#[test_log::test]
+async fn regenerate_api_key(db_pool: SqlitePool) {
+    let router = AuthenticatedRouter::new(db_pool).await;
+    let response = router.post("/admin/services/1/apikey", "").await; // empty body
+
+    assert_eq!(response.status(), StatusCode::OK);
+
+    let data: ServicePayloadAdmin = response.into_struct().await;
+
+    assert_ne!(data.api_key, TestObjects::admin_service_1().api_key)
+}

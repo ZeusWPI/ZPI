@@ -56,4 +56,22 @@ impl<'a> ServiceRepo<'a> {
         .await?
         .ok_or(DatabaseError::NotFound)
     }
+
+    pub async fn regenerate_api_key(&self, service_id: u32) -> Result<Service, DatabaseError> {
+        let mut api_key = [0u8; 32];
+        rand::rng().fill_bytes(&mut api_key);
+        let api_key = base_62::encode(&api_key);
+
+        sqlx::query_as(
+            "
+        UPDATE service SET api_key = ? WHERE id = ?
+        RETURNING id, name, api_key
+        ",
+        )
+        .bind(api_key)
+        .bind(service_id)
+        .fetch_optional(self.db)
+        .await?
+        .ok_or(DatabaseError::NotFound)
+    }
 }
