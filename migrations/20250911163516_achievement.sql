@@ -22,7 +22,7 @@ CREATE TABLE goal (
 CREATE TABLE unlock (
     user_id INTEGER NOT NULL,
     goal_id INTEGER NOT NULL,
-    time DATETIME NOT NULL,
+    time DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
     PRIMARY KEY (user_id, goal_id),
     FOREIGN KEY (user_id) REFERENCES user (id),
     FOREIGN KEY (goal_id) REFERENCES goal (id)
