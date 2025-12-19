@@ -52,3 +52,32 @@ async fn post_achievements_for_service(db_pool: SqlitePool) {
 
     assert_eq!(data, TestObjects::achievement_1());
 }
+
+#[sqlx::test(fixtures("services"))]
+#[test_log::test]
+async fn post_achievements_wrong_sequence(db_pool: SqlitePool) {
+    let router = AuthenticatedRouter::new(db_pool).await;
+    let mut body = AchievementCreatePayload {
+        name: "Achievements".into(),
+        goals: vec![
+            GoalCreatePayload {
+                description: "Get 2 achievements".into(),
+                sequence: 2,
+            },
+            GoalCreatePayload {
+                description: "Get 1 achievement".into(),
+                sequence: 0,
+            },
+        ],
+    };
+
+    let response = router
+        .clone()
+        .post("/admin/services/1/achievements", &body)
+        .await;
+    assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+
+    body.goals[1].sequence = 1;
+    let response = router.post("/admin/services/1/achievements", &body).await;
+    assert_eq!(response.status(), StatusCode::BAD_REQUEST);
+}
