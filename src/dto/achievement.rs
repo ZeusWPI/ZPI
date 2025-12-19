@@ -44,10 +44,33 @@ pub struct AchievementCreatePayload {
 
 impl AchievementCreatePayload {
     pub async fn create(
-        self,
+        mut self,
         service_id: u32,
         db: &Database,
     ) -> Result<AchievementPayload, AppError> {
+        if self.goals.is_empty() {
+            return Err(AppError::PayloadError("Expected at least one goal".into()));
+        }
+
+        self.goals.sort_by_key(|x| x.sequence);
+        let ordered_1_seperated = self
+            .goals
+            .iter()
+            .map(|x| x.sequence)
+            .collect::<Vec<u32>>()
+            .windows(2)
+            .all(|w| match (w.first(), w.get(1)) {
+                (Some(first), Some(second)) => second - first == 1,
+                _ => false,
+            });
+        if let Some(goal) = self.goals.first()
+            && (goal.sequence != 0 || !ordered_1_seperated)
+        {
+            return Err(AppError::PayloadError(
+                "Sequence should start with 0 and count up by 1".into(),
+            ));
+        }
+
         let rows = db
             .achievements()
             .create_for_service(
@@ -59,13 +82,14 @@ impl AchievementCreatePayload {
             )
             .await?;
 
+        // pack rows into an achievement payload
         let mut rows = rows.into_iter().peekable();
-
         let achievement = unpack_next_achievement(&mut rows).ok_or(AppError::NotFound)?;
         Ok(achievement)
     }
 }
 
+/// unpacks an achievement from database rows into a payload
 fn unpack_next_achievement<I>(rows: &mut Peekable<I>) -> Option<AchievementPayload>
 where
     I: Iterator<Item = AchievementGoal>,
