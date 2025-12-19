@@ -30,6 +30,7 @@ serde_json = { version = "1.0.142", default-features = false }
 tracing = { version = "=0.1", default-features = false }
 tokio-util = { version = "0.7.16", default-features = false, features = ["io"] }
 serde = { version = "1.0.219", default-features = false, features = ["derive"] }
+chrono = { version = "0.4.42", default-features = false, features = ["serde", "clock"] }
 
 axum-extra = { version = "0.10.1", default-features = false, features = [
     "typed-header",
