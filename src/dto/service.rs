@@ -33,6 +33,13 @@ impl ServicePayloadAdmin {
             .map(|service| service.into())
             .collect())
     }
+
+    pub async fn regenerate_api_key(
+        db: &Database,
+        service_id: u32,
+    ) -> Result<ServicePayloadAdmin, AppError> {
+        Ok(db.services().regenerate_api_key(service_id).await?.into())
+    }
 }
 #[derive(Debug, Serialize, Deserialize, PartialEq)]
 pub struct ServicePayloadUser {

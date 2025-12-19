@@ -33,4 +33,13 @@ impl ServiceHandler {
     ) -> Result<Json<ServicePayloadAdmin>, AppError> {
         Ok(Json(payload.patch(service_id, &db).await?))
     }
+
+    pub async fn api_key(
+        db: Database,
+        Path(service_id): Path<u32>,
+    ) -> Result<Json<ServicePayloadAdmin>, AppError> {
+        Ok(Json(
+            ServicePayloadAdmin::regenerate_api_key(&db, service_id).await?,
+        ))
+    }
 }
