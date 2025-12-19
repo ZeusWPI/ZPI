@@ -122,12 +122,12 @@ impl TestObjects {
                 GoalPayload {
                     id: 1,
                     description: "Get 1 achievement".into(),
-                    sequence: 1,
+                    sequence: 0,
                 },
                 GoalPayload {
                     id: 2,
                     description: "Get 2 achievements".into(),
-                    sequence: 2,
+                    sequence: 1,
                 },
             ],
         }
@@ -140,7 +140,7 @@ impl TestObjects {
             goals: vec![GoalPayload {
                 id: 3,
                 description: "Upload a profile picture".into(),
-                sequence: 1,
+                sequence: 0,
             }],
         }
     }

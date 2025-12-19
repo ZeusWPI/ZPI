@@ -69,6 +69,9 @@ impl<'a> AchievementRepo<'a> {
         .await?)
     }
 
+    /// create an achievement for a service
+    ///
+    /// returns the achievement with all its goals in rows
     pub async fn create_for_service(
         &self,
         service_id: u32,

@@ -35,12 +35,12 @@ async fn post_achievements_for_service(db_pool: SqlitePool) {
         name: "Achievements".into(),
         goals: vec![
             GoalCreatePayload {
-                description: "Get 1 achievement".into(),
+                description: "Get 2 achievements".into(),
                 sequence: 1,
             },
             GoalCreatePayload {
-                description: "Get 2 achievements".into(),
-                sequence: 2,
+                description: "Get 1 achievement".into(),
+                sequence: 0,
             },
         ],
     };
