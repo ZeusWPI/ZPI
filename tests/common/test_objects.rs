@@ -84,7 +84,7 @@ impl TestObjects {
         ServicePayloadAdmin {
             id: 1,
             name: "zpi".to_string(),
-            api_key: "apikey".to_string(),
+            api_key: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".to_string(),
         }
     }
 
@@ -92,7 +92,7 @@ impl TestObjects {
         ServicePayloadAdmin {
             id: 2,
             name: "zodom".to_string(),
-            api_key: "apikey".to_string(),
+            api_key: "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb".to_string(),
         }
     }
 
