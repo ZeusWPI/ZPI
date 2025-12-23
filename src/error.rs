@@ -48,7 +48,7 @@ pub enum AppError {
     #[error("Submitted image resolution was too large")]
     ImageResTooLarge,
 
-    #[error("The requested image was not found")]
+    #[error("Not found")]
     NotFound,
 
     #[error("Submitted file had an incorrect type")]

@@ -76,7 +76,7 @@ impl AuthenticatedRouter {
         self.request(Method::PATCH, path, Some(body)).await
     }
 
-    /// send a patch request to an endpoint on this router
+    /// send a post request to an endpoint on this router
     ///
     /// must have a leading "/"
     pub async fn post<T: Serialize>(self, path: &str, body: T) -> Response<Body> {
@@ -108,6 +108,7 @@ impl AuthenticatedRouter {
 }
 pub struct UnauthenticatedRouter {
     router: Router,
+    api_key: Option<String>,
 }
 
 impl UnauthenticatedRouter {
@@ -129,6 +130,7 @@ impl UnauthenticatedRouter {
 
         Self {
             router: api_router().layer(session_layer).with_state(state),
+            api_key: None,
         }
     }
 
@@ -136,9 +138,42 @@ impl UnauthenticatedRouter {
     ///
     /// must have a leading "/"
     pub async fn get(self, path: &str) -> Response<Body> {
-        self.router
-            .oneshot(Request::builder().uri(path).body(Body::empty()).unwrap())
-            .await
-            .unwrap()
+        self.request(Method::GET, path, None::<()>).await
+    }
+
+    /// send a post request to an endpoint on this router
+    ///
+    /// must have a leading "/"
+    pub async fn post<T: Serialize>(self, path: &str, body: T) -> Response<Body> {
+        self.request(Method::POST, path, Some(body)).await
+    }
+
+    /// send a request to an endpoint on this router
+    ///
+    /// must have a leading "/"
+    async fn request<T: Serialize>(
+        self,
+        method: Method,
+        path: &str,
+        body: Option<T>,
+    ) -> Response<Body> {
+        let mut request_builder = Request::builder().method(method).uri(path);
+
+        if let Some(api_key) = &self.api_key {
+            request_builder = request_builder.header(header::AUTHORIZATION, api_key);
+        }
+
+        let request = match body {
+            Some(body) => request_builder
+                .header(header::CONTENT_TYPE, mime::APPLICATION_JSON.as_ref())
+                .body(Json(body).into_response().into_body()),
+            None => request_builder.body(Body::empty()),
+        };
+        self.router.oneshot(request.unwrap()).await.unwrap()
+    }
+
+    pub fn with_api_key(mut self, api_key: &str) -> Self {
+        self.api_key = Some("Bearer ".to_string() + api_key);
+        self
     }
 }

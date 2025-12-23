@@ -6,7 +6,9 @@ use zpi::dto::{
 };
 
 use crate::common::{
-    into_struct::IntoStruct, router::AuthenticatedRouter, test_objects::TestObjects,
+    into_struct::IntoStruct,
+    router::{AuthenticatedRouter, UnauthenticatedRouter},
+    test_objects::TestObjects,
 };
 
 mod common;
@@ -81,3 +83,32 @@ async fn post_achievements_wrong_sequence(db_pool: SqlitePool) {
     let response = router.post("/admin/services/1/achievements", &body).await;
     assert_eq!(response.status(), StatusCode::BAD_REQUEST);
 }
+
+#[sqlx::test(fixtures("services"))]
+#[test_log::test]
+async fn unlock_goal_wrong_api_key(db_pool: SqlitePool) {
+    let router = UnauthenticatedRouter::new(db_pool)
+        .await
+        .with_api_key("wrongapikey");
+
+    let response = router.post("/users/1/unlock/1/1", None::<()>).await;
+    assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
+}
+
+#[sqlx::test(fixtures("services", "achievements", "users"))]
+#[test_log::test]
+async fn unlock_goal(db_pool: SqlitePool) {
+    let router = UnauthenticatedRouter::new(db_pool)
+        .await
+        .with_api_key("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+
+    let response = router.post("/users/1/unlock/1/1", None::<()>).await;
+    assert_eq!(response.status(), StatusCode::OK);
+
+    let data: AchievementPayload = response.into_struct().await;
+
+    assert_eq!(data, TestObjects::achievement_1());
+}
+
+// TODO wat als goal niet bestaat -> status code 404
+// TODO wat als goal al unlocked is -> status code 200
