@@ -15,6 +15,10 @@ members = ["database"]
 unwrap_used = "deny"
 expect_used = "deny"
 indexing_slicing = "deny"
+dbg_macro = "deny"
+print_stderr = "deny"
+print_stdout = "deny"
+todo = "deny"
 panic = "warn"
 
 [dependencies]
@@ -26,6 +30,8 @@ serde_json = { version = "1.0.142", default-features = false }
 tracing = { version = "=0.1", default-features = false }
 tokio-util = { version = "0.7.16", default-features = false, features = ["io"] }
 serde = { version = "1.0.219", default-features = false, features = ["derive"] }
+chrono = { version = "0.4.42", default-features = false, features = ["serde", "clock"] }
+
 axum-extra = { version = "0.10.1", default-features = false, features = [
     "typed-header",
 ] }
@@ -73,6 +79,7 @@ database = { path = "database" }
 http-body-util = "0.1.2"
 tower = { version = "0.4.13", default-features = false, features = ["util"] }
 mime = "0.3"
+test-log = {version = "0.2", default-features = false, features = ["trace"]}
 sqlx = { version = "0.8.6", default-features = false, features = [
     "runtime-tokio",
     "sqlite",

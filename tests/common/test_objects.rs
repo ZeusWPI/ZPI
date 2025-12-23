@@ -1,8 +1,13 @@
-use database::models::{
-    tag::Tag,
-    user::{User, UserProfile},
+use database::models::{tag::Tag, user::User};
+use zpi::{
+    dto::{
+        achievement::AchievementPayload,
+        goal::GoalPayload,
+        service::{ServicePayloadAdmin, ServicePayloadUser},
+        user::UserProfile,
+    },
+    extractors::AuthenticatedUser,
 };
-use zpi::handlers::AuthenticatedUser;
 
 pub struct TestObjects;
 
@@ -11,6 +16,7 @@ impl TestObjects {
         AuthenticatedUser {
             id: 1,
             username: "cheese".into(),
+            admin: true,
         }
     }
 
@@ -67,6 +73,87 @@ impl TestObjects {
             name: "boekentoren".into(),
             category: "toren".into(),
             description: Some("Ik ben een boekentoren".into()),
+        }
+    }
+
+    pub fn admin_services() -> Vec<ServicePayloadAdmin> {
+        vec![Self::admin_service_1(), Self::admin_service_2()]
+    }
+
+    pub fn admin_service_1() -> ServicePayloadAdmin {
+        ServicePayloadAdmin {
+            id: 1,
+            name: "zpi".to_string(),
+            api_key: "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa".to_string(),
+        }
+    }
+
+    fn admin_service_2() -> ServicePayloadAdmin {
+        ServicePayloadAdmin {
+            id: 2,
+            name: "zodom".to_string(),
+            api_key: "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb".to_string(),
+        }
+    }
+
+    pub fn services() -> Vec<ServicePayloadUser> {
+        vec![Self::service_1(), Self::service_2()]
+    }
+
+    pub fn service_1() -> ServicePayloadUser {
+        ServicePayloadUser {
+            id: 1,
+            name: "zpi".to_string(),
+        }
+    }
+
+    fn service_2() -> ServicePayloadUser {
+        ServicePayloadUser {
+            id: 2,
+            name: "zodom".to_string(),
+        }
+    }
+
+    pub fn achievement_1() -> AchievementPayload {
+        AchievementPayload {
+            id: 1,
+            name: "Achievements".into(),
+            goals: vec![
+                GoalPayload {
+                    id: 1,
+                    description: "Get 1 achievement".into(),
+                    sequence: 0,
+                },
+                GoalPayload {
+                    id: 2,
+                    description: "Get 2 achievements".into(),
+                    sequence: 1,
+                },
+            ],
+        }
+    }
+
+    pub fn achievement_2() -> AchievementPayload {
+        AchievementPayload {
+            id: 2,
+            name: "Profile Picture".into(),
+            goals: vec![GoalPayload {
+                id: 3,
+                description: "Upload a profile picture".into(),
+                sequence: 0,
+            }],
+        }
+    }
+
+    pub fn achievement_3() -> AchievementPayload {
+        AchievementPayload {
+            id: 3,
+            name: "Votes".into(),
+            goals: vec![GoalPayload {
+                id: 4,
+                description: "Vote 1 time".into(),
+                sequence: 1,
+            }],
         }
     }
 }

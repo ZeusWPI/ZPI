@@ -2,7 +2,7 @@ use axum::{
     Router,
     extract::DefaultBodyLimit,
     middleware::from_extractor,
-    routing::{get, post},
+    routing::{get, patch, post},
 };
 use database::Database;
 use reqwest::StatusCode;
@@ -13,17 +13,19 @@ use tower_sessions::{MemoryStore, SessionManagerLayer, cookie::SameSite};
 use crate::{
     config::AppConfig,
     error::AppError,
+    extractors::{Admin, AuthenticatedUser},
     handlers::{
-        AuthenticatedUser, auth::AuthHandler, image::ImageHandler, user::UserHandler,
-        version::VersionHandler,
+        achievement::AchievementHandler, auth::AuthHandler, image::ImageHandler,
+        service::ServiceHandler, user::UserHandler, version::VersionHandler,
     },
 };
 
 pub mod config;
+pub mod dto;
 pub mod error;
+pub mod extractors;
 pub mod handlers;
 pub mod image;
-pub mod middleware;
 
 #[derive(Clone)]
 pub struct AppState {
@@ -66,6 +68,7 @@ pub fn api_router() -> Router<AppState> {
     Router::new()
         .merge(open_routes())
         .merge(authenticated_routes())
+        .nest("/admin", admin_routes())
         .fallback(get(|| async { StatusCode::NOT_FOUND }))
 }
 
@@ -86,6 +89,22 @@ fn authenticated_routes() -> Router<AppState> {
             post(ImageHandler::post).delete(ImageHandler::delete),
         )
         .route_layer(from_extractor::<AuthenticatedUser>())
+        .route("/services", get(ServiceHandler::get_user))
+}
+
+fn admin_routes() -> Router<AppState> {
+    Router::new()
+        .route(
+            "/services",
+            get(ServiceHandler::get_admin).post(ServiceHandler::post),
+        )
+        .route("/services/{id}", patch(ServiceHandler::patch))
+        .route(
+            "/services/{id}/achievements",
+            get(AchievementHandler::get_for_service).post(AchievementHandler::post_for_service),
+        )
+        .route("/services/{id}/apikey", post(ServiceHandler::api_key))
+        .route_layer(from_extractor::<Admin>())
 }
 
 #[allow(clippy::expect_used)]

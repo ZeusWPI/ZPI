@@ -1,7 +1,7 @@
-use database::models::user::{User, UserPatchPayload, UserProfile};
+use database::models::user::{User, UserPatch};
 use reqwest::StatusCode;
 use sqlx::SqlitePool;
-use zpi::handlers::AuthenticatedUser;
+use zpi::{dto::user::UserProfile, extractors::AuthenticatedUser};
 
 use crate::common::{
     into_struct::IntoStruct,
@@ -12,6 +12,7 @@ use crate::common::{
 mod common;
 
 #[sqlx::test]
+#[test_log::test]
 async fn get_users_me(db_pool: SqlitePool) {
     let router = AuthenticatedRouter::new(db_pool).await;
     let response = router.get("/users/me").await;
@@ -22,6 +23,7 @@ async fn get_users_me(db_pool: SqlitePool) {
 }
 
 #[sqlx::test]
+#[test_log::test]
 async fn get_users_me_unauthenticated(db_pool: SqlitePool) {
     let router = UnauthenticatedRouter::new(db_pool).await;
     let response = router.get("/users/me").await;
@@ -29,9 +31,10 @@ async fn get_users_me_unauthenticated(db_pool: SqlitePool) {
 }
 
 #[sqlx::test(fixtures("users"))]
+#[test_log::test]
 async fn patch_user(db_pool: SqlitePool) {
     let router = AuthenticatedRouter::new(db_pool).await;
-    let body = UserPatchPayload {
+    let body = UserPatch {
         about: "Changed about".to_string(),
     };
     let response = router.patch("/users/1", body).await;
@@ -47,6 +50,7 @@ async fn patch_user(db_pool: SqlitePool) {
 }
 
 #[sqlx::test(fixtures("users"))]
+#[test_log::test]
 async fn get_profile_by_id(db_pool: SqlitePool) {
     let router = AuthenticatedRouter::new(db_pool).await;
     let response = router.get("/users/1").await;
@@ -57,6 +61,7 @@ async fn get_profile_by_id(db_pool: SqlitePool) {
 }
 
 #[sqlx::test]
+#[test_log::test]
 async fn get_profile_by_id_unauthenticated(db_pool: SqlitePool) {
     let router = UnauthenticatedRouter::new(db_pool).await;
     let response = router.get("/users/1").await;
@@ -64,6 +69,7 @@ async fn get_profile_by_id_unauthenticated(db_pool: SqlitePool) {
 }
 
 #[sqlx::test]
+#[test_log::test]
 async fn get_profile_404(db_pool: SqlitePool) {
     // test getting by id
     let router = AuthenticatedRouter::new(db_pool.clone()).await;
@@ -77,6 +83,7 @@ async fn get_profile_404(db_pool: SqlitePool) {
 }
 
 #[sqlx::test(fixtures("users"))]
+#[test_log::test]
 async fn get_profile_by_name(db_pool: SqlitePool) {
     let router = AuthenticatedRouter::new(db_pool).await;
     let response = router.get("/users/cheese").await;

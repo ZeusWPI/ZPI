@@ -14,7 +14,10 @@ use headers::{ETag, IfNoneMatch};
 use reqwest::{StatusCode, header::ETAG};
 use serde::Deserialize;
 
-use crate::{config::AppConfig, error::AppError, handlers::AuthenticatedUser, image::ProfileImage};
+use crate::{
+    config::AppConfig, error::AppError, extractors::authenticated_user::AuthenticatedUser,
+    image::ProfileImage,
+};
 
 static SIZES: &[u32] = &[64, 128, 256, 512];
 static MAX_SIZE: u32 = 512;
