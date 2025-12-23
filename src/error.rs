@@ -60,6 +60,9 @@ pub enum AppError {
     #[error("User was not logged in")]
     NotLoggedIn,
 
+    #[error("Wrong api key")]
+    BadApiKey,
+
     #[error("Forbidden")]
     Forbidden,
 
@@ -80,6 +83,7 @@ impl AppError {
         let (status, msg) = match self {
             Self::PayloadError(_) => (StatusCode::BAD_REQUEST, "Payload error"),
             Self::NotLoggedIn => (StatusCode::UNAUTHORIZED, "Not logged in."),
+            Self::BadApiKey => (StatusCode::UNAUTHORIZED, "Bad api key."),
             Self::Forbidden => (StatusCode::FORBIDDEN, "Forbidden."),
             Self::NoFile => (
                 StatusCode::BAD_REQUEST,
