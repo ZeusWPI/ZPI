@@ -1,7 +1,5 @@
 use axum::{Json, extract::Path};
-use axum_extra::TypedHeader;
 use database::Database;
-use headers::{Authorization, authorization::Bearer};
 
 use crate::{
     dto::{
@@ -11,6 +9,7 @@ use crate::{
         },
     },
     error::AppError,
+    extractors::api_key::ApiKey,
 };
 
 pub struct ServiceHandler;
@@ -51,10 +50,10 @@ impl ServiceHandler {
     pub async fn unlock_goal(
         db: Database,
         Path((user_id, service_id, goal_id)): Path<(u32, u32, u32)>,
-        api_key: TypedHeader<Authorization<Bearer>>,
+        ApiKey(api_key): ApiKey,
     ) -> Result<Json<AchievementPayload>, AppError> {
         let expected_api_key = db.services().by_id(service_id).await?.api_key;
-        if api_key.token() != expected_api_key {
+        if api_key != expected_api_key {
             return Err(AppError::BadApiKey);
         }
 

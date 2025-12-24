@@ -95,7 +95,7 @@ async fn post_achievements_wrong_sequence(db: SqlitePool) {
 async fn unlock_goal(db: SqlitePool) {
     let none = TestRouter::new(db.clone());
     let response = none.post("/users/1/unlock/1/1", None::<()>).await;
-    assert_eq!(response.status(), StatusCode::BAD_REQUEST); // TODO
+    assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
 
     let router = TestRouter::with_api_key(db, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
     let response = router.post("/users/1/unlock/1/1", None::<()>).await;
