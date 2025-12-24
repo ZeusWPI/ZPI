@@ -34,6 +34,19 @@ impl AchievementPayload {
 
         Ok(achievements)
     }
+
+    pub async fn unlock_goal(
+        db: &Database,
+        user_id: u32,
+        goal_id: u32,
+    ) -> Result<AchievementPayload, AppError> {
+        let rows = db.achievements().unlock_goal(user_id, goal_id).await?;
+
+        // pack rows into an achievement payload
+        let mut rows = rows.into_iter().peekable();
+        let achievement = unpack_next_achievement(&mut rows).ok_or(AppError::NotFound)?;
+        Ok(achievement)
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]

@@ -5,16 +5,14 @@ use zpi::dto::service::{
     ServiceCreatePayload, ServicePatchPayload, ServicePayloadAdmin, ServicePayloadUser,
 };
 
-use crate::common::{
-    into_struct::IntoStruct, router::AuthenticatedRouter, test_objects::TestObjects,
-};
+use crate::common::{into_struct::IntoStruct, router::TestRouter, test_objects::TestObjects};
 
 mod common;
 
 #[sqlx::test(fixtures("services"))]
 #[test_log::test]
 async fn get_all_services_as_admin(db_pool: SqlitePool) {
-    let router = AuthenticatedRouter::new(db_pool).await;
+    let router = TestRouter::as_admin(db_pool).await;
     let response = router.get("/admin/services").await;
 
     assert_eq!(response.status(), StatusCode::OK);
@@ -27,7 +25,7 @@ async fn get_all_services_as_admin(db_pool: SqlitePool) {
 #[sqlx::test(fixtures("services"))]
 #[test_log::test]
 async fn get_all_services(db_pool: SqlitePool) {
-    let router = AuthenticatedRouter::new(db_pool).await;
+    let router = TestRouter::as_user(db_pool).await;
     let response = router.get("/services").await;
 
     assert_eq!(response.status(), StatusCode::OK);
@@ -45,7 +43,7 @@ struct ApiKey {
 #[sqlx::test(fixtures("services"))]
 #[test_log::test]
 async fn users_dont_see_api_key(db_pool: SqlitePool) {
-    let router = AuthenticatedRouter::new(db_pool).await;
+    let router = TestRouter::as_user(db_pool).await;
     let response = router.get("/services").await;
 
     assert_eq!(response.status(), StatusCode::OK);
@@ -58,7 +56,7 @@ async fn users_dont_see_api_key(db_pool: SqlitePool) {
 #[sqlx::test]
 #[test_log::test]
 async fn create_service(db_pool: SqlitePool) {
-    let router = AuthenticatedRouter::new(db_pool).await;
+    let router = TestRouter::as_admin(db_pool).await;
     let body = ServiceCreatePayload {
         name: "zpi".to_string(),
     };
@@ -77,7 +75,7 @@ async fn create_service(db_pool: SqlitePool) {
 #[test_log::test]
 async fn patch_service(db_pool: SqlitePool) {
     let new_name = "gamification2";
-    let router = AuthenticatedRouter::new(db_pool).await;
+    let router = TestRouter::as_admin(db_pool).await;
     let body = ServicePatchPayload {
         name: new_name.to_string(),
     };
@@ -95,7 +93,7 @@ async fn patch_service(db_pool: SqlitePool) {
 #[sqlx::test(fixtures("services"))]
 #[test_log::test]
 async fn regenerate_api_key(db_pool: SqlitePool) {
-    let router = AuthenticatedRouter::new(db_pool).await;
+    let router = TestRouter::as_admin(db_pool).await;
     let response = router.post("/admin/services/1/apikey", "").await; // empty body
 
     assert_eq!(response.status(), StatusCode::OK);

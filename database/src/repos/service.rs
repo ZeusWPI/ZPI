@@ -74,4 +74,12 @@ impl<'a> ServiceRepo<'a> {
         .await?
         .ok_or(DatabaseError::NotFound)
     }
+
+    pub async fn by_id(&self, id: u32) -> Result<Service, DatabaseError> {
+        sqlx::query_as("SELECT id, name, api_key FROM service WHERE id == ? LIMIT 1;")
+            .bind(id)
+            .fetch_optional(self.db)
+            .await?
+            .ok_or(DatabaseError::NotFound)
+    }
 }
