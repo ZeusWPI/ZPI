@@ -5,18 +5,14 @@ use zpi::dto::{
     goal::GoalCreatePayload,
 };
 
-use crate::common::{
-    into_struct::IntoStruct,
-    router::{AuthenticatedRouter, UnauthenticatedRouter},
-    test_objects::TestObjects,
-};
+use crate::common::{into_struct::IntoStruct, router::TestRouter, test_objects::TestObjects};
 
 mod common;
 
 #[sqlx::test(fixtures("services", "achievements"))]
 #[test_log::test]
 async fn get_achievements_for_service(db_pool: SqlitePool) {
-    let router = AuthenticatedRouter::new(db_pool).await;
+    let router = TestRouter::as_admin(db_pool).await;
     let response = router.get("/admin/services/1/achievements").await;
 
     assert_eq!(response.status(), StatusCode::OK);
@@ -32,7 +28,7 @@ async fn get_achievements_for_service(db_pool: SqlitePool) {
 #[sqlx::test(fixtures("services"))]
 #[test_log::test]
 async fn post_achievements_for_service(db_pool: SqlitePool) {
-    let router = AuthenticatedRouter::new(db_pool).await;
+    let router = TestRouter::as_admin(db_pool).await;
     let body = AchievementCreatePayload {
         name: "Achievements".into(),
         goals: vec![
@@ -58,7 +54,7 @@ async fn post_achievements_for_service(db_pool: SqlitePool) {
 #[sqlx::test(fixtures("services"))]
 #[test_log::test]
 async fn post_achievements_wrong_sequence(db_pool: SqlitePool) {
-    let router = AuthenticatedRouter::new(db_pool).await;
+    let router = TestRouter::as_admin(db_pool).await;
     let mut body = AchievementCreatePayload {
         name: "Achievements".into(),
         goals: vec![
@@ -73,10 +69,7 @@ async fn post_achievements_wrong_sequence(db_pool: SqlitePool) {
         ],
     };
 
-    let response = router
-        .clone()
-        .post("/admin/services/1/achievements", &body)
-        .await;
+    let response = router.post("/admin/services/1/achievements", &body).await;
     assert_eq!(response.status(), StatusCode::BAD_REQUEST);
 
     body.goals[1].sequence = 1;
@@ -87,9 +80,7 @@ async fn post_achievements_wrong_sequence(db_pool: SqlitePool) {
 #[sqlx::test(fixtures("services"))]
 #[test_log::test]
 async fn unlock_goal_wrong_api_key(db_pool: SqlitePool) {
-    let router = UnauthenticatedRouter::new(db_pool)
-        .await
-        .with_api_key("wrongapikey");
+    let router = TestRouter::with_api_key(db_pool, "wrongapikey").await;
 
     let response = router.post("/users/1/unlock/1/1", None::<()>).await;
     assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
@@ -98,9 +89,7 @@ async fn unlock_goal_wrong_api_key(db_pool: SqlitePool) {
 #[sqlx::test(fixtures("services", "achievements", "users"))]
 #[test_log::test]
 async fn unlock_goal(db_pool: SqlitePool) {
-    let router = UnauthenticatedRouter::new(db_pool)
-        .await
-        .with_api_key("aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+    let router = TestRouter::with_api_key(db_pool, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa").await;
 
     let response = router.post("/users/1/unlock/1/1", None::<()>).await;
     assert_eq!(response.status(), StatusCode::OK);
