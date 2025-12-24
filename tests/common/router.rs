@@ -77,7 +77,7 @@ impl TestRouter {
         self
     }
 
-    pub async fn with_api_key(db: SqlitePool, api_key: &str) -> Self {
+    pub fn with_api_key(db: SqlitePool, api_key: &str) -> Self {
         let mut router = Self::new(db);
         router.api_key = Some("Bearer ".to_string() + api_key);
         router
