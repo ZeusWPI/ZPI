@@ -16,6 +16,14 @@ impl TestObjects {
         AuthenticatedUser {
             id: 1,
             username: "cheese".into(),
+            admin: false,
+        }
+    }
+
+    pub fn admin_user_1() -> AuthenticatedUser {
+        AuthenticatedUser {
+            id: 1,
+            username: "cheese".into(),
             admin: true,
         }
     }

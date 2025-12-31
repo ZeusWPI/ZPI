@@ -40,6 +40,30 @@ impl<'a> AchievementRepo<'a> {
         .await?)
     }
 
+    async fn by_goal_id(&self, goal_id: u32) -> Result<Vec<AchievementGoal>, DatabaseError> {
+        Ok(query_as(
+            "
+            SELECT
+                achievement.id    as achievement_id,
+                achievement.name  as achievement_name,
+                service_id,
+                goal2.id          as goal_id,
+                goal2.description as goal_description,
+                goal2.sequence    as goal_sequence
+
+            FROM
+                goal as goal1
+                    inner join achievement on achievement.id = goal1.achievement_id
+                    inner join goal as goal2 on goal2.achievement_id = achievement.id
+            WHERE
+                goal1.id = ?;
+            ",
+        )
+        .bind(goal_id)
+        .fetch_all(self.db)
+        .await?)
+    }
+
     pub async fn for_service(
         &self,
         service_id: u32,
@@ -118,5 +142,26 @@ impl<'a> AchievementRepo<'a> {
 
         tx.commit().await?;
         self.by_id(db_achievement.id).await
+    }
+
+    pub async fn unlock_goal(
+        &self,
+        user_id: u32,
+        goal_id: u32,
+    ) -> Result<Vec<AchievementGoal>, DatabaseError> {
+        query(
+            "
+            INSERT INTO
+                unlock (user_id, goal_id)
+            VALUES
+                (?,?);
+            ",
+        )
+        .bind(user_id)
+        .bind(goal_id)
+        .execute(self.db)
+        .await?;
+
+        self.by_goal_id(goal_id).await
     }
 }

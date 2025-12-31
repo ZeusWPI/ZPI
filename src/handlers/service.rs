@@ -2,10 +2,14 @@ use axum::{Json, extract::Path};
 use database::Database;
 
 use crate::{
-    dto::service::{
-        ServiceCreatePayload, ServicePatchPayload, ServicePayloadAdmin, ServicePayloadUser,
+    dto::{
+        achievement::AchievementPayload,
+        service::{
+            ServiceCreatePayload, ServicePatchPayload, ServicePayloadAdmin, ServicePayloadUser,
+        },
     },
     error::AppError,
+    extractors::api_key::ApiKey,
 };
 
 pub struct ServiceHandler;
@@ -40,6 +44,21 @@ impl ServiceHandler {
     ) -> Result<Json<ServicePayloadAdmin>, AppError> {
         Ok(Json(
             ServicePayloadAdmin::regenerate_api_key(&db, service_id).await?,
+        ))
+    }
+
+    pub async fn unlock_goal(
+        db: Database,
+        Path((user_id, service_id, goal_id)): Path<(u32, u32, u32)>,
+        ApiKey(api_key): ApiKey,
+    ) -> Result<Json<AchievementPayload>, AppError> {
+        let expected_api_key = db.services().by_id(service_id).await?.api_key;
+        if api_key != expected_api_key {
+            return Err(AppError::BadApiKey);
+        }
+
+        Ok(Json(
+            AchievementPayload::unlock_goal(&db, user_id, goal_id).await?,
         ))
     }
 }
