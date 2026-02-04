@@ -114,5 +114,21 @@ async fn unlock_goal_wrong_api_key(db_pool: SqlitePool) {
     assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
 }
 
-// TODO wat als goal niet bestaat -> status code 404
-// TODO wat als goal al unlocked is -> status code 200
+#[sqlx::test(fixtures("services"))]
+#[test_log::test]
+async fn unlock_goal_404(db: SqlitePool) {
+    let router = TestRouter::with_api_key(db, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+    let response = router.post("/users/1/unlock/1/3", None::<()>).await;
+    assert_eq!(response.status(), StatusCode::NOT_FOUND);
+}
+
+#[sqlx::test(fixtures("services", "users", "achievements", "unlocks"))]
+#[test_log::test]
+async fn unlock_goal_already_unlocked(db: SqlitePool) {
+    let router = TestRouter::with_api_key(db, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
+    let response = router.post("/users/1/unlock/1/3", None::<()>).await;
+    assert_eq!(response.status(), StatusCode::OK);
+
+    let data: AchievementPayload = response.into_struct().await;
+    assert_eq!(data, TestObjects::achievement_2());
+}

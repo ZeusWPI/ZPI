@@ -40,7 +40,16 @@ impl AchievementPayload {
         user_id: u32,
         goal_id: u32,
     ) -> Result<AchievementPayload, AppError> {
-        let rows = db.achievements().unlock_goal(user_id, goal_id).await?;
+        if !db.achievements().goal_exist(goal_id).await? {
+            return Err(AppError::NotFound);
+        }
+
+        let rows = if db.achievements().goal_unlocked(goal_id).await? {
+            // goal already unlocked
+            db.achievements().by_goal_id(goal_id).await?
+        } else {
+            db.achievements().unlock_goal(user_id, goal_id).await?
+        };
 
         // pack rows into an achievement payload
         let mut rows = rows.into_iter().peekable();

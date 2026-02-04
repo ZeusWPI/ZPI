@@ -1,4 +1,4 @@
-use sqlx::{SqlitePool, query, query_as};
+use sqlx::{SqlitePool, query, query_as, query_scalar};
 
 use crate::{
     error::DatabaseError,
@@ -40,7 +40,7 @@ impl<'a> AchievementRepo<'a> {
         .await?)
     }
 
-    async fn by_goal_id(&self, goal_id: u32) -> Result<Vec<AchievementGoal>, DatabaseError> {
+    pub async fn by_goal_id(&self, goal_id: u32) -> Result<Vec<AchievementGoal>, DatabaseError> {
         Ok(query_as(
             "
             SELECT
@@ -163,5 +163,39 @@ impl<'a> AchievementRepo<'a> {
         .await?;
 
         self.by_goal_id(goal_id).await
+    }
+
+    pub async fn goal_exist(&self, goal_id: u32) -> Result<bool, DatabaseError> {
+        Ok(query_scalar::<_, i32>(
+            "
+            SELECT
+                1
+            FROM
+                goal
+            WHERE
+                goal.id = ?;
+            ",
+        )
+        .bind(goal_id)
+        .fetch_optional(self.db)
+        .await?
+        .is_some())
+    }
+
+    pub async fn goal_unlocked(&self, goal_id: u32) -> Result<bool, DatabaseError> {
+        Ok(query_scalar::<_, i32>(
+            "
+            SELECT
+                1
+            FROM
+                unlock
+            WHERE
+                goal_id = ?;
+            ",
+        )
+        .bind(goal_id)
+        .fetch_optional(self.db)
+        .await?
+        .is_some())
     }
 }
