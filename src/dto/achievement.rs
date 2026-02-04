@@ -86,7 +86,7 @@ impl AchievementCreatePayload {
         }
 
         self.goals.sort_by_key(|x| x.sequence);
-        let ordered_1_seperated = self
+        let ordered_1_separated = self
             .goals
             .iter()
             .map(|x| x.sequence)
@@ -97,7 +97,7 @@ impl AchievementCreatePayload {
                 _ => false,
             });
         if let Some(goal) = self.goals.first()
-            && (goal.sequence != 0 || !ordered_1_seperated)
+            && (goal.sequence != 0 || !ordered_1_separated)
         {
             return Err(AppError::PayloadError(
                 "Sequence should start with 0 and count up by 1".into(),
