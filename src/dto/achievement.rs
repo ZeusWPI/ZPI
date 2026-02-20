@@ -58,6 +58,7 @@ impl AchievementPayload {
             return Err(AppError::NotFound);
         }
 
+        // FIXME improve
         let rows = if db.achievements().goal_unlocked(goal_id).await? {
             // goal already unlocked
             db.achievements().by_goal_id(goal_id).await?
