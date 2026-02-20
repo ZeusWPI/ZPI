@@ -1,4 +1,4 @@
-use std::iter::Peekable;
+use std::iter::from_fn;
 
 use database::{
     Database,
@@ -38,15 +38,7 @@ impl AchievementPayload {
         service_id: u32,
     ) -> Result<Vec<AchievementPayload>, AppError> {
         let rows = db.achievements().for_service(service_id).await?;
-
-        let mut rows = rows.into_iter().peekable();
-
-        let mut achievements = Vec::new();
-        while let Some(achievement) = unpack_next_achievement(&mut rows) {
-            achievements.push(achievement);
-        }
-
-        Ok(achievements)
+        Ok(unpack_achievements(rows).collect())
     }
 
     pub async fn unlock_goal(
@@ -66,10 +58,7 @@ impl AchievementPayload {
             db.achievements().unlock_goal(user_id, goal_id).await?
         };
 
-        // pack rows into an achievement payload
-        let mut rows = rows.into_iter().peekable();
-        let achievement = unpack_next_achievement(&mut rows).ok_or(AppError::NotFound)?;
-        Ok(achievement)
+        unpack_achievements(rows).next().ok_or(AppError::NotFound)
     }
 }
 
@@ -101,15 +90,7 @@ impl AchievementUnlockedPayload {
         user_id: u32,
     ) -> Result<Vec<AchievementUnlockedPayload>, AppError> {
         let rows = db.achievements().unlocked_for_user(user_id).await?;
-
-        let mut rows = rows.into_iter().peekable();
-
-        let mut achievements = Vec::new();
-        while let Some(achievement) = unpack_next_achievement(&mut rows) {
-            achievements.push(achievement);
-        }
-
-        Ok(achievements)
+        Ok(unpack_achievements(rows).collect())
     }
 }
 
@@ -159,10 +140,7 @@ impl AchievementCreatePayload {
             )
             .await?;
 
-        // pack rows into an achievement payload
-        let mut rows = rows.into_iter().peekable();
-        let achievement = unpack_next_achievement(&mut rows).ok_or(AppError::NotFound)?;
-        Ok(achievement)
+        unpack_achievements(rows).next().ok_or(AppError::NotFound)
     }
 }
 
@@ -207,23 +185,24 @@ impl AchievementRow for AchievementGoalUnlock {
     }
 }
 
-/// unpacks an achievement from database rows into a payload
-fn unpack_next_achievement<I, R>(rows: &mut Peekable<I>) -> Option<R::Payload>
+// group rows by achievement id and return an iterator of achievements
+fn unpack_achievements<I, R>(rows: I) -> impl Iterator<Item = R::Payload>
 where
-    I: Iterator<Item = R>,
+    I: IntoIterator<Item = R>,
     R: AchievementRow,
 {
-    // get first row
-    let first_row = rows.next()?;
-    let current_achievement_id = first_row.achievement_id();
+    let mut iter = rows.into_iter().peekable();
 
-    // make a new achievement with the first goal
-    let mut achievement: R::Payload = first_row.into();
+    from_fn(move || {
+        let first_row = iter.next()?;
+        let current_id = first_row.achievement_id();
 
-    // add all following goals for the same achievement
-    while let Some(next_row) = rows.next_if(|x| x.achievement_id() == current_achievement_id) {
-        next_row.push_into(&mut achievement);
-    }
+        let mut achievement: R::Payload = first_row.into();
+        // pack all goals for this achievement into the achievement
+        while let Some(next_row) = iter.next_if(|r| r.achievement_id() == current_id) {
+            next_row.push_into(&mut achievement);
+        }
 
-    Some(achievement)
+        Some(achievement)
+    })
 }
