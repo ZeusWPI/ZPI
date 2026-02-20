@@ -73,12 +73,24 @@ impl TestObjects {
     }
 
     pub fn user_profile_2() -> UserProfile {
+        let naive =
+            NaiveDateTime::parse_from_str("2025-05-05 12:11:12", "%Y-%m-%d %H:%M:%S").unwrap();
+        let dt_local = Local.from_local_datetime(&naive).single().unwrap();
         UserProfile {
             id: 2,
             username: "wafel".into(),
             about: "I like cheese.".into(),
             tags: Self::tags(),
-            achievements: vec![], // TODO mss dat uit unlock fixture verwijderen
+            achievements: vec![AchievementUnlockedPayload {
+                id: 2,
+                name: "Profile Picture".into(),
+                goals: vec![GoalUnlockedPayload {
+                    id: 3,
+                    description: "Upload a profile picture".into(),
+                    sequence: 0,
+                    time: dt_local,
+                }],
+            }],
         }
     }
 
