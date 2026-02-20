@@ -126,9 +126,9 @@ async fn unlock_goal_404(db: SqlitePool) {
 #[test_log::test]
 async fn unlock_goal_already_unlocked(db: SqlitePool) {
     let router = TestRouter::with_api_key(db, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa");
-    let response = router.post("/users/1/unlock/1/3", None::<()>).await;
+    let response = router.post("/users/1/unlock/1/1", None::<()>).await;
     assert_eq!(response.status(), StatusCode::OK);
 
     let data: AchievementPayload = response.into_struct().await;
-    assert_eq!(data, TestObjects::achievement_2());
+    assert_eq!(data, TestObjects::achievement_1());
 }
