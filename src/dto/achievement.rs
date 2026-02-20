@@ -2,7 +2,7 @@ use std::iter::from_fn;
 
 use database::{
     Database,
-    models::achievement::{AchievementCreate, AchievementGoal, AchievementGoalUnlock},
+    models::achievement::{AchievementCreate, AchievementGoal, AchievementGoalUnlock, GoalCreate},
 };
 use serde::{Deserialize, Serialize};
 
@@ -135,7 +135,7 @@ impl AchievementCreatePayload {
                 service_id,
                 AchievementCreate {
                     name: self.name,
-                    goals: self.goals.into_iter().map(|x| x.into()).collect(),
+                    goals: self.goals.into_iter().map(GoalCreate::from).collect(),
                 },
             )
             .await?;
