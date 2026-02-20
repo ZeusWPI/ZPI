@@ -220,14 +220,8 @@ where
     let mut achievement: R::Payload = first_row.into();
 
     // add all following goals for the same achievement
-    while let Some(next_row) = rows.peek() {
-        if next_row.achievement_id() != current_achievement_id {
-            break;
-        }
-
-        if let Some(next_goal_row) = rows.next() {
-            next_goal_row.push_into(&mut achievement);
-        }
+    while let Some(next_row) = rows.next_if(|x| x.achievement_id() == current_achievement_id) {
+        next_row.push_into(&mut achievement);
     }
 
     Some(achievement)
