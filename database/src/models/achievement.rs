@@ -35,7 +35,7 @@ pub struct AchievementGoalUnlock {
     pub goal_id: i32,
     pub goal_description: String,
     pub goal_sequence: i32,
-    pub unlocked_at: Option<DateTime<Local>>,
+    pub unlocked_at: DateTime<Local>,
 }
 
 #[derive(Serialize, Deserialize)]
