@@ -1,9 +1,10 @@
 use database::{
     Database,
-    error::DatabaseError,
     models::{tag::Tag, user::UserPatch},
 };
 use serde::{Deserialize, Serialize};
+
+use crate::{dto::achievement::AchievementUnlockedPayload, error::AppError};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct UserPatchPayload {
@@ -22,6 +23,7 @@ pub struct UserProfile {
     pub username: String,
     pub about: String,
     pub tags: Vec<Tag>,
+    pub achievements: Vec<AchievementUnlockedPayload>,
 }
 
 pub enum UserId {
@@ -45,18 +47,20 @@ impl From<u32> for UserId {
 }
 
 impl UserProfile {
-    pub async fn get(db: &Database, user_id: UserId) -> Result<UserProfile, DatabaseError> {
+    pub async fn get(db: &Database, user_id: UserId) -> Result<UserProfile, AppError> {
         let user = match user_id {
             UserId::Username(username) => db.users().by_username(username).await?,
             UserId::Id(id) => db.users().by_id(id).await?,
         };
         let tags = db.tags().for_user(user.id).await?;
+        let achievements = AchievementUnlockedPayload::for_user(db, user.id).await?;
 
         Ok(UserProfile {
             id: user.id,
             username: user.username,
             about: user.about,
             tags,
+            achievements,
         })
     }
 }

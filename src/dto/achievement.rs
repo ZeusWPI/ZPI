@@ -2,7 +2,7 @@ use std::iter::Peekable;
 
 use database::{
     Database,
-    models::achievement::{AchievementCreate, AchievementGoal},
+    models::achievement::{AchievementCreate, AchievementGoal, AchievementGoalUnlock},
 };
 use serde::{Deserialize, Serialize};
 
@@ -66,7 +66,21 @@ pub struct AchievementUnlockedPayload {
 }
 
 impl AchievementUnlockedPayload {
-    // TODO unlock goal
+    pub async fn for_user(
+        db: &Database,
+        user_id: u32,
+    ) -> Result<Vec<AchievementUnlockedPayload>, AppError> {
+        let rows = db.achievements().unlocked_for_user(user_id).await?;
+
+        let mut rows = rows.into_iter().peekable();
+
+        let mut achievements = Vec::new();
+        while let Some(achievement) = unpack_next_achievement_copy(&mut rows) {
+            achievements.push(achievement);
+        }
+
+        Ok(achievements)
+    }
 }
 
 #[derive(Serialize, Deserialize)]
@@ -152,6 +166,46 @@ where
                 id: next_goal.goal_id,
                 description: next_goal.goal_description,
                 sequence: next_goal.goal_sequence,
+            });
+        }
+    }
+
+    Some(achievement)
+}
+
+// FIXME deze methode samenvoegen met unpack_next_achievement
+/// unpacks an achievement from database rows into a payload
+fn unpack_next_achievement_copy<I>(rows: &mut Peekable<I>) -> Option<AchievementUnlockedPayload>
+where
+    I: Iterator<Item = AchievementGoalUnlock>,
+{
+    // get first row
+    let row = rows.next()?;
+
+    // make a new achievement with the first goal
+    let mut achievement = AchievementUnlockedPayload {
+        id: row.achievement_id,
+        name: row.achievement_name,
+        goals: vec![GoalUnlockedPayload {
+            id: row.goal_id,
+            description: row.goal_description,
+            sequence: row.goal_sequence,
+            time: row.time,
+        }],
+    };
+
+    // add all following goals for the same achievement
+    while let Some(next_row) = rows.peek() {
+        if next_row.achievement_id != achievement.id {
+            break;
+        }
+
+        if let Some(next_goal) = rows.next() {
+            achievement.goals.push(GoalUnlockedPayload {
+                id: next_goal.goal_id,
+                description: next_goal.goal_description,
+                sequence: next_goal.goal_sequence,
+                time: next_goal.time,
             });
         }
     }

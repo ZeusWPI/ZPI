@@ -45,7 +45,7 @@ async fn patch_user(db_pool: SqlitePool) {
     assert_eq!(user_response, expected_user);
 }
 
-#[sqlx::test(fixtures("users"))]
+#[sqlx::test(fixtures("users", "services", "achievements", "unlocks"))]
 #[test_log::test]
 async fn get_profile_by_id(db_pool: SqlitePool) {
     let router = TestRouter::as_user(db_pool).await;
@@ -78,7 +78,7 @@ async fn get_profile_404(db_pool: SqlitePool) {
     assert_eq!(response.status(), StatusCode::NOT_FOUND);
 }
 
-#[sqlx::test(fixtures("users"))]
+#[sqlx::test(fixtures("users", "services", "achievements", "unlocks"))]
 #[test_log::test]
 async fn get_profile_by_name(db_pool: SqlitePool) {
     let router = TestRouter::as_user(db_pool).await;

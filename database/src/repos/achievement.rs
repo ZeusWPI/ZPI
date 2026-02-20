@@ -2,7 +2,7 @@ use sqlx::{SqlitePool, query, query_as, query_scalar};
 
 use crate::{
     error::DatabaseError,
-    models::achievement::{Achievement, AchievementCreate, AchievementGoal},
+    models::achievement::{Achievement, AchievementCreate, AchievementGoal, AchievementGoalUnlock},
 };
 
 pub struct AchievementRepo<'a> {
@@ -197,5 +197,33 @@ impl<'a> AchievementRepo<'a> {
         .fetch_optional(self.db)
         .await?
         .is_some())
+    }
+
+    pub async fn unlocked_for_user(
+        &self,
+        user_id: u32,
+    ) -> Result<Vec<AchievementGoalUnlock>, DatabaseError> {
+        Ok(query_as(
+            "SELECT
+                achievement.id as achievement_id,
+                name as achievement_name,
+                service_id,
+                goal.id as goal_id,
+                description as goal_description,
+                sequence as goal_sequence,
+                time
+            FROM
+                unlock
+                    INNER JOIN goal ON goal_id = goal.id
+                    INNER JOIN achievement ON achievement_id = achievement.id
+            WHERE
+                user_id = ?
+            ORDER BY
+                achievement_id, goal_sequence;
+            ",
+        )
+        .bind(user_id)
+        .fetch_all(self.db)
+        .await?)
     }
 }
