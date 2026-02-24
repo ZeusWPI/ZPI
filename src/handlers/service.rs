@@ -3,7 +3,7 @@ use database::Database;
 
 use crate::{
     dto::{
-        achievement::AchievementPayload,
+        achievement::AchievementUnlockedPayload,
         service::{
             ServiceCreatePayload, ServicePatchPayload, ServicePayloadAdmin, ServicePayloadUser,
         },
@@ -51,14 +51,14 @@ impl ServiceHandler {
         db: Database,
         Path((user_id, service_id, goal_id)): Path<(u32, u32, u32)>,
         ApiKey(api_key): ApiKey,
-    ) -> Result<Json<AchievementPayload>, AppError> {
+    ) -> Result<Json<AchievementUnlockedPayload>, AppError> {
         let expected_api_key = db.services().by_id(service_id).await?.api_key;
         if api_key != expected_api_key {
             return Err(AppError::BadApiKey);
         }
 
         Ok(Json(
-            AchievementPayload::unlock_goal(&db, user_id, goal_id).await?,
+            AchievementUnlockedPayload::unlock_goal(&db, user_id, goal_id).await?,
         ))
     }
 }

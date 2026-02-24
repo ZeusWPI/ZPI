@@ -40,26 +40,32 @@ impl<'a> AchievementRepo<'a> {
         .await?)
     }
 
-    pub async fn by_goal_id(&self, goal_id: u32) -> Result<Vec<AchievementGoal>, DatabaseError> {
+    pub async fn by_unlocked_goal_id(
+        &self,
+        user_id: u32,
+        goal_id: u32,
+    ) -> Result<Vec<AchievementGoalUnlock>, DatabaseError> {
         Ok(query_as(
             "
             SELECT
                 achievement.id    as achievement_id,
                 achievement.name  as achievement_name,
                 service_id,
-                goal2.id          as goal_id,
-                goal2.description as goal_description,
-                goal2.sequence    as goal_sequence
-
+                goal.id          as goal_id,
+                goal.description as goal_description,
+                goal.sequence    as goal_sequence,
+                time
             FROM
                 goal as goal1
-                    inner join achievement on achievement.id = goal1.achievement_id
-                    inner join goal as goal2 on goal2.achievement_id = achievement.id
+                    INNER JOIN achievement on achievement.id = goal1.achievement_id
+                    INNER JOIN goal on goal.achievement_id = achievement.id
+                    INNER JOIN unlock on goal1.id = unlock.goal_id
             WHERE
-                goal1.id = ?;
+                goal1.id = ? AND user_id = ?;
             ",
         )
         .bind(goal_id)
+        .bind(user_id)
         .fetch_all(self.db)
         .await?)
     }
@@ -148,7 +154,7 @@ impl<'a> AchievementRepo<'a> {
         &self,
         user_id: u32,
         goal_id: u32,
-    ) -> Result<Vec<AchievementGoal>, DatabaseError> {
+    ) -> Result<Vec<AchievementGoalUnlock>, DatabaseError> {
         query(
             "
             INSERT INTO
@@ -162,7 +168,7 @@ impl<'a> AchievementRepo<'a> {
         .execute(self.db)
         .await?;
 
-        self.by_goal_id(goal_id).await
+        self.by_unlocked_goal_id(user_id, goal_id).await
     }
 
     pub async fn goal_exist(&self, goal_id: u32) -> Result<bool, DatabaseError> {

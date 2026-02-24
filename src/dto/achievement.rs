@@ -40,26 +40,6 @@ impl AchievementPayload {
         let rows = db.achievements().for_service(service_id).await?;
         Ok(unpack_achievements(rows).collect())
     }
-
-    pub async fn unlock_goal(
-        db: &Database,
-        user_id: u32,
-        goal_id: u32,
-    ) -> Result<AchievementPayload, AppError> {
-        if !db.achievements().goal_exist(goal_id).await? {
-            return Err(AppError::NotFound);
-        }
-
-        // FIXME improve
-        let rows = if db.achievements().goal_unlocked(goal_id).await? {
-            // goal already unlocked
-            db.achievements().by_goal_id(goal_id).await?
-        } else {
-            db.achievements().unlock_goal(user_id, goal_id).await?
-        };
-
-        unpack_achievements(rows).next().ok_or(AppError::NotFound)
-    }
 }
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
@@ -90,7 +70,32 @@ impl AchievementUnlockedPayload {
         user_id: u32,
     ) -> Result<Vec<AchievementUnlockedPayload>, AppError> {
         let rows = db.achievements().unlocked_for_user(user_id).await?;
+
+        let rows = rows.into_iter().peekable();
+
         Ok(unpack_achievements(rows).collect())
+    }
+
+    pub async fn unlock_goal(
+        db: &Database,
+        user_id: u32,
+        goal_id: u32,
+    ) -> Result<AchievementUnlockedPayload, AppError> {
+        if !db.achievements().goal_exist(goal_id).await? {
+            return Err(AppError::NotFound);
+        }
+
+        // FIXME improve
+        let rows = if db.achievements().goal_unlocked(goal_id).await? {
+            // goal already unlocked
+            db.achievements()
+                .by_unlocked_goal_id(user_id, goal_id)
+                .await?
+        } else {
+            db.achievements().unlock_goal(user_id, goal_id).await?
+        };
+
+        unpack_achievements(rows).next().ok_or(AppError::NotFound)
     }
 }
 
