@@ -14,7 +14,7 @@ pub struct GoalUnlockedPayload {
     pub id: i32,
     pub description: String,
     pub sequence: i32,
-    pub unlocked_at: DateTime<Local>,
+    pub time: DateTime<Local>,
 }
 
 #[derive(Serialize, Deserialize)]

@@ -78,6 +78,10 @@ fn open_routes() -> Router<AppState> {
         .route("/oauth/callback", get(AuthHandler::callback))
         .route("/image/{id}", get(ImageHandler::get))
         .route("/version", get(VersionHandler::get))
+        .route(
+            "/users/{id}/unlock/{service_id}/{goal_id}",
+            post(ServiceHandler::unlock_goal),
+        )
 }
 
 fn authenticated_routes() -> Router<AppState> {

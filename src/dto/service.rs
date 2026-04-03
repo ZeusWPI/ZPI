@@ -30,7 +30,7 @@ impl ServicePayloadAdmin {
             .all()
             .await?
             .into_iter()
-            .map(|service| service.into())
+            .map(Self::from)
             .collect())
     }
 
@@ -63,7 +63,7 @@ impl ServicePayloadUser {
             .all()
             .await?
             .into_iter()
-            .map(|service| service.into())
+            .map(Self::from)
             .collect())
     }
 }

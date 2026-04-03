@@ -1,8 +1,8 @@
-use std::iter::Peekable;
+use std::iter::from_fn;
 
 use database::{
     Database,
-    models::achievement::{AchievementCreate, AchievementGoal},
+    models::achievement::{AchievementCreate, AchievementGoal, AchievementGoalUnlock, GoalCreate},
 };
 use serde::{Deserialize, Serialize};
 
@@ -18,21 +18,27 @@ pub struct AchievementPayload {
     pub goals: Vec<GoalPayload>,
 }
 
+impl From<AchievementGoal> for AchievementPayload {
+    fn from(row: AchievementGoal) -> Self {
+        Self {
+            id: row.achievement_id,
+            name: row.achievement_name,
+            goals: vec![GoalPayload {
+                id: row.goal_id,
+                description: row.goal_description,
+                sequence: row.goal_sequence,
+            }],
+        }
+    }
+}
+
 impl AchievementPayload {
     pub async fn for_service(
         db: &Database,
         service_id: u32,
     ) -> Result<Vec<AchievementPayload>, AppError> {
         let rows = db.achievements().for_service(service_id).await?;
-
-        let mut rows = rows.into_iter().peekable();
-
-        let mut achievements = Vec::new();
-        while let Some(achievement) = unpack_next_achievement(&mut rows) {
-            achievements.push(achievement);
-        }
-
-        Ok(achievements)
+        Ok(unpack_achievements(rows).collect())
     }
 }
 
@@ -43,8 +49,54 @@ pub struct AchievementUnlockedPayload {
     pub goals: Vec<GoalUnlockedPayload>,
 }
 
+impl From<AchievementGoalUnlock> for AchievementUnlockedPayload {
+    fn from(row: AchievementGoalUnlock) -> Self {
+        Self {
+            id: row.achievement_id,
+            name: row.achievement_name,
+            goals: vec![GoalUnlockedPayload {
+                id: row.goal_id,
+                description: row.goal_description,
+                sequence: row.goal_sequence,
+                time: row.time,
+            }],
+        }
+    }
+}
+
 impl AchievementUnlockedPayload {
-    // TODO unlock goal
+    pub async fn for_user(
+        db: &Database,
+        user_id: u32,
+    ) -> Result<Vec<AchievementUnlockedPayload>, AppError> {
+        let rows = db.achievements().unlocked_for_user(user_id).await?;
+
+        let rows = rows.into_iter().peekable();
+
+        Ok(unpack_achievements(rows).collect())
+    }
+
+    pub async fn unlock_goal(
+        db: &Database,
+        user_id: u32,
+        goal_id: u32,
+    ) -> Result<AchievementUnlockedPayload, AppError> {
+        if !db.achievements().goal_exist(goal_id).await? {
+            return Err(AppError::NotFound);
+        }
+
+        // FIXME improve
+        let rows = if db.achievements().goal_unlocked(goal_id).await? {
+            // goal already unlocked
+            db.achievements()
+                .by_unlocked_goal_id(user_id, goal_id)
+                .await?
+        } else {
+            db.achievements().unlock_goal(user_id, goal_id).await?
+        };
+
+        unpack_achievements(rows).next().ok_or(AppError::NotFound)
+    }
 }
 
 #[derive(Serialize, Deserialize)]
@@ -64,7 +116,7 @@ impl AchievementCreatePayload {
         }
 
         self.goals.sort_by_key(|x| x.sequence);
-        let ordered_1_seperated = self
+        let ordered_1_separated = self
             .goals
             .iter()
             .map(|x| x.sequence)
@@ -75,7 +127,7 @@ impl AchievementCreatePayload {
                 _ => false,
             });
         if let Some(goal) = self.goals.first()
-            && (goal.sequence != 0 || !ordered_1_seperated)
+            && (goal.sequence != 0 || !ordered_1_separated)
         {
             return Err(AppError::PayloadError(
                 "Sequence should start with 0 and count up by 1".into(),
@@ -88,51 +140,74 @@ impl AchievementCreatePayload {
                 service_id,
                 AchievementCreate {
                     name: self.name,
-                    goals: self.goals.into_iter().map(|x| x.into()).collect(),
+                    goals: self.goals.into_iter().map(GoalCreate::from).collect(),
                 },
             )
             .await?;
 
-        // pack rows into an achievement payload
-        let mut rows = rows.into_iter().peekable();
-        let achievement = unpack_next_achievement(&mut rows).ok_or(AppError::NotFound)?;
-        Ok(achievement)
+        unpack_achievements(rows).next().ok_or(AppError::NotFound)
     }
 }
 
-/// unpacks an achievement from database rows into a payload
-fn unpack_next_achievement<I>(rows: &mut Peekable<I>) -> Option<AchievementPayload>
-where
-    I: Iterator<Item = AchievementGoal>,
-{
-    // get first row
-    let row = rows.next()?;
+pub trait AchievementRow: Sized {
+    type Payload: From<Self>;
 
-    // make a new achievement with the first goal
-    let mut achievement = AchievementPayload {
-        id: row.achievement_id,
-        name: row.achievement_name,
-        goals: vec![GoalPayload {
-            id: row.goal_id,
-            description: row.goal_description,
-            sequence: row.goal_sequence,
-        }],
-    };
+    fn achievement_id(&self) -> i32;
 
-    // add all following goals for the same achievement
-    while let Some(next_row) = rows.peek() {
-        if next_row.achievement_id != achievement.id {
-            break;
-        }
+    fn push_into(self, payload: &mut Self::Payload);
+}
 
-        if let Some(next_goal) = rows.next() {
-            achievement.goals.push(GoalPayload {
-                id: next_goal.goal_id,
-                description: next_goal.goal_description,
-                sequence: next_goal.goal_sequence,
-            });
-        }
+impl AchievementRow for AchievementGoal {
+    type Payload = AchievementPayload;
+
+    fn achievement_id(&self) -> i32 {
+        self.achievement_id
     }
 
-    Some(achievement)
+    fn push_into(self, payload: &mut Self::Payload) {
+        payload.goals.push(GoalPayload {
+            id: self.goal_id,
+            description: self.goal_description,
+            sequence: self.goal_sequence,
+        });
+    }
+}
+
+impl AchievementRow for AchievementGoalUnlock {
+    type Payload = AchievementUnlockedPayload;
+
+    fn achievement_id(&self) -> i32 {
+        self.achievement_id
+    }
+
+    fn push_into(self, payload: &mut Self::Payload) {
+        payload.goals.push(GoalUnlockedPayload {
+            id: self.goal_id,
+            description: self.goal_description,
+            sequence: self.goal_sequence,
+            time: self.time,
+        });
+    }
+}
+
+// group rows by achievement id and return an iterator of achievements
+fn unpack_achievements<I, R>(rows: I) -> impl Iterator<Item = R::Payload>
+where
+    I: IntoIterator<Item = R>,
+    R: AchievementRow,
+{
+    let mut iter = rows.into_iter().peekable();
+
+    from_fn(move || {
+        let first_row = iter.next()?;
+        let current_id = first_row.achievement_id();
+
+        let mut achievement: R::Payload = first_row.into();
+        // pack all goals for this achievement into the achievement
+        while let Some(next_row) = iter.next_if(|r| r.achievement_id() == current_id) {
+            next_row.push_into(&mut achievement);
+        }
+
+        Some(achievement)
+    })
 }

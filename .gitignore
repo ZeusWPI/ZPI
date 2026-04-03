@@ -4,4 +4,3 @@
 *.db
 *.db-wal
 *.db-shm
-/.direnv

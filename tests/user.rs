@@ -1,20 +1,16 @@
 use database::models::user::{User, UserPatch};
 use reqwest::StatusCode;
 use sqlx::SqlitePool;
-use zpi::{dto::user::UserProfile, extractors::AuthenticatedUser};
+use zpi::extractors::AuthenticatedUser;
 
-use crate::common::{
-    into_struct::IntoStruct,
-    router::{AuthenticatedRouter, UnauthenticatedRouter},
-    test_objects::TestObjects,
-};
+use crate::common::{into_struct::IntoStruct, router::TestRouter, test_objects::TestObjects};
 
 mod common;
 
 #[sqlx::test]
 #[test_log::test]
 async fn get_users_me(db_pool: SqlitePool) {
-    let router = AuthenticatedRouter::new(db_pool).await;
+    let router = TestRouter::as_user(db_pool).await;
     let response = router.get("/users/me").await;
     assert_eq!(response.status(), StatusCode::OK);
 
@@ -25,7 +21,7 @@ async fn get_users_me(db_pool: SqlitePool) {
 #[sqlx::test]
 #[test_log::test]
 async fn get_users_me_unauthenticated(db_pool: SqlitePool) {
-    let router = UnauthenticatedRouter::new(db_pool).await;
+    let router = TestRouter::new(db_pool);
     let response = router.get("/users/me").await;
     assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
 }
@@ -33,7 +29,7 @@ async fn get_users_me_unauthenticated(db_pool: SqlitePool) {
 #[sqlx::test(fixtures("users"))]
 #[test_log::test]
 async fn patch_user(db_pool: SqlitePool) {
-    let router = AuthenticatedRouter::new(db_pool).await;
+    let router = TestRouter::as_user(db_pool).await;
     let body = UserPatch {
         about: "Changed about".to_string(),
     };
@@ -47,48 +43,4 @@ async fn patch_user(db_pool: SqlitePool) {
     expected_user.about = "Changed about".to_string();
 
     assert_eq!(user_response, expected_user);
-}
-
-#[sqlx::test(fixtures("users"))]
-#[test_log::test]
-async fn get_profile_by_id(db_pool: SqlitePool) {
-    let router = AuthenticatedRouter::new(db_pool).await;
-    let response = router.get("/users/1").await;
-    assert_eq!(response.status(), StatusCode::OK);
-
-    let user_response: UserProfile = response.into_struct().await;
-    assert_eq!(user_response, TestObjects::user_profile_1());
-}
-
-#[sqlx::test]
-#[test_log::test]
-async fn get_profile_by_id_unauthenticated(db_pool: SqlitePool) {
-    let router = UnauthenticatedRouter::new(db_pool).await;
-    let response = router.get("/users/1").await;
-    assert_eq!(response.status(), StatusCode::UNAUTHORIZED);
-}
-
-#[sqlx::test]
-#[test_log::test]
-async fn get_profile_404(db_pool: SqlitePool) {
-    // test getting by id
-    let router = AuthenticatedRouter::new(db_pool.clone()).await;
-    let response = router.get("/users/1").await;
-    assert_eq!(response.status(), StatusCode::NOT_FOUND);
-
-    // test getting by username
-    let router = AuthenticatedRouter::new(db_pool).await;
-    let response = router.get("/users/cheese").await;
-    assert_eq!(response.status(), StatusCode::NOT_FOUND);
-}
-
-#[sqlx::test(fixtures("users"))]
-#[test_log::test]
-async fn get_profile_by_name(db_pool: SqlitePool) {
-    let router = AuthenticatedRouter::new(db_pool).await;
-    let response = router.get("/users/cheese").await;
-    assert_eq!(response.status(), StatusCode::OK);
-
-    let user_response: UserProfile = response.into_struct().await;
-    assert_eq!(user_response, TestObjects::user_profile_1());
 }

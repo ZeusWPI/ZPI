@@ -1,8 +1,9 @@
+use chrono::{Local, NaiveDateTime, TimeZone};
 use database::models::{tag::Tag, user::User};
 use zpi::{
     dto::{
-        achievement::AchievementPayload,
-        goal::GoalPayload,
+        achievement::{AchievementPayload, AchievementUnlockedPayload},
+        goal::{GoalPayload, GoalUnlockedPayload},
         service::{ServicePayloadAdmin, ServicePayloadUser},
         user::UserProfile,
     },
@@ -13,6 +14,14 @@ pub struct TestObjects;
 
 impl TestObjects {
     pub fn authenticated_user_1() -> AuthenticatedUser {
+        AuthenticatedUser {
+            id: 1,
+            username: "cheese".into(),
+            admin: false,
+        }
+    }
+
+    pub fn admin_user_1() -> AuthenticatedUser {
         AuthenticatedUser {
             id: 1,
             username: "cheese".into(),
@@ -37,20 +46,51 @@ impl TestObjects {
     }
 
     pub fn user_profile_1() -> UserProfile {
+        let naive =
+            NaiveDateTime::parse_from_str("2025-01-01 19:19:20", "%Y-%m-%d %H:%M:%S").unwrap();
+        let dt_local = Local.from_local_datetime(&naive).single().unwrap();
+
+        let naive2 =
+            NaiveDateTime::parse_from_str("2025-09-16 12:59:21", "%Y-%m-%d %H:%M:%S").unwrap();
+        let dt_local2 = Local.from_local_datetime(&naive2).single().unwrap();
+
         UserProfile {
             id: 1,
             username: "cheese".into(),
             about: "Just a test user, doing its job... and fantasizing about a life outside the test environment.".to_string(),
             tags: Vec::new(),
+            achievements: vec![
+                AchievementUnlockedPayload {
+                id: 1,
+                name: "Achievements".into(),
+                goals: vec![GoalUnlockedPayload {id : 1, description: String::from("Get 1 achievement"), sequence: 0, time: dt_local}],
+            }, AchievementUnlockedPayload {
+                id: 3,
+                name: "Votes".into(),
+                goals: vec![GoalUnlockedPayload {id : 4, description: String::from("Vote 1 time"), sequence: 0, time: dt_local2}],
+            } ],
         }
     }
 
     pub fn user_profile_2() -> UserProfile {
+        let naive =
+            NaiveDateTime::parse_from_str("2025-05-05 12:11:12", "%Y-%m-%d %H:%M:%S").unwrap();
+        let dt_local = Local.from_local_datetime(&naive).single().unwrap();
         UserProfile {
             id: 2,
             username: "wafel".into(),
             about: "I like cheese.".into(),
             tags: Self::tags(),
+            achievements: vec![AchievementUnlockedPayload {
+                id: 2,
+                name: "Profile Picture".into(),
+                goals: vec![GoalUnlockedPayload {
+                    id: 3,
+                    description: "Upload a profile picture".into(),
+                    sequence: 0,
+                    time: dt_local,
+                }],
+            }],
         }
     }
 
