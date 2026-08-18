@@ -16,20 +16,20 @@
 </script>
 
 
-<div class="flex flex-row justify-between md:grid md:grid-cols-3">
+<div class="flex flex-row justify-between md:grid md:grid-cols-3 w-full px-6 mb-2">
 	<!-- Versions -->
 	<div class="flex flex-row items-center gap-2">
 		<Tooltip text="Backend Version">
-			<div class="flex flex-row items-center">
+			<a href="https://github.com/ZeusWPI/ZPI/tree/main" class="flex flex-row items-center hover:underline">
 				<img class="size-4 mx-0.5" src={rustIcon} alt="Rust" />
 				v{$query.data}
-			</div>
+			</a>
 		</Tooltip>
 		<Tooltip text="Frontend Version">
-			<div class="flex flex-row items-center">
+			<a href="https://github.com/ZeusWPI/ZPI/tree/main/ui" class="flex flex-row items-center hover:underline">
 				<img class="size-4 mx-0.5" src={svelteIcon} alt="Svelte" />
 				v{version}
-			</div>
+			</a>
 		</Tooltip>
 	</div>
 

@@ -2,11 +2,12 @@
 	import logoutIcon from '$lib/assets/logout.svg';
 	import { env } from '$env/dynamic/public';
 	import AchievementIcon from '$lib/components/icons/AchievementIcon.svelte';
+	import type { CurrentUser } from '$lib/globalFunctions-Types';
 
 	const BACKEND_URL = env.PUBLIC_BACKEND_URL;
 
 
-	let { username } = $props();
+	let { user }: { user: CurrentUser | null } = $props();
 </script>
 
 
@@ -27,8 +28,8 @@
 	</div>
 	<!-- Right Content -->
 	<div class="flex flex-row items-center">
-		{#if username !== ""}
-			<a class="text-lg" href="/profile/{username}">{username}</a>
+		{#if user}
+			<a class="text-lg" href="/profile/{user.username}">{user.username}</a>
 			<a href="{BACKEND_URL}/api/logout">
 				<img class="size-6 mx-2 invert" src={logoutIcon} alt="Logout" />
 			</a>
