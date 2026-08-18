@@ -7,7 +7,7 @@
 	import { createQuery } from '@tanstack/svelte-query';
 	import { getProfile, type ProfileData } from '$lib/globalFunctions-Types';
 
-	let { username, editAllowed = false } = $props();
+	let { username, editAllowed = false }: { username: string, editAllowed?: boolean } = $props();
 
 	let query: CreateQueryResult<ProfileData> = createQuery({
 			queryKey: [`profile-${username}`],
