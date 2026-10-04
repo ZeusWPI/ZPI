@@ -1,0 +1,26 @@
+@import 'tailwindcss';
+
+@plugin 'flowbite/plugin';
+/*@custom-variant dark (&:where(.dark, .dark *));*/
+/* ... */
+@source "../../node_modules/flowbite-svelte/dist";
+@source "../../node_modules/flowbite-svelte-icons/dist";
+
+
+@theme {
+    --color-primary-50: oklch(0.943 0.03 38.59);
+    --color-primary-100: oklch(0.925 0.039 37.55);
+    --color-primary-200: oklch(0.894 0.058 39.67);
+    --color-primary-300: oklch(0.862 0.078 40.41);
+    --color-primary-400: oklch(0.828 0.101 41.87);
+    --color-primary-500: oklch(0.797 0.124 44.83);
+    --color-primary-600: oklch(0.764 0.153 47.81);
+    --color-primary-700: oklch(0.7304 0.1864 52.57);
+    --color-primary-800: oklch(0.644 0.165 52.29);
+    --color-primary-900: oklch(0.564 0.144 52.44);
+    --color-primary-950: oklch(0.52 0.133 52.41);
+}
+
+.zorange {
+    filter: brightness(0) saturate(100%) invert(52%) sepia(77%) saturate(1871%) hue-rotate(358deg) brightness(98%) contrast(111%);
+}
