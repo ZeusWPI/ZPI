@@ -2,11 +2,12 @@ use database::{
     Database,
     models::{tag::Tag, user::UserPatch},
 };
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use crate::{dto::achievement::AchievementUnlockedPayload, error::AppError};
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, JsonSchema)]
 pub struct UserPatchPayload {
     pub about: String,
 }
@@ -17,7 +18,7 @@ impl From<UserPatchPayload> for UserPatch {
     }
 }
 
-#[derive(Debug, Deserialize, Serialize, PartialEq)]
+#[derive(Debug, Deserialize, Serialize, PartialEq, JsonSchema)]
 pub struct UserProfile {
     pub id: u32,
     pub username: String,

@@ -4,6 +4,7 @@ use database::{
     Database,
     models::achievement::{AchievementCreate, AchievementGoal, AchievementGoalUnlock, GoalCreate},
 };
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 use crate::{
@@ -42,7 +43,7 @@ impl AchievementPayload {
     }
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, JsonSchema)]
 pub struct AchievementUnlockedPayload {
     pub id: i32,
     pub name: String,

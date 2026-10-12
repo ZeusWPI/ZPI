@@ -74,6 +74,10 @@ axum = { version = "0.8.4", default-features = false, features = [
 ] }
 
 database = { path = "database" }
+aide = { version = "0.15.1", features = ["axum",
+"axum-json",
+"macros"] }
+schemars = { version = "1.2.2", features = ["chrono04"] }
 
 [dev-dependencies]
 http-body-util = "0.1.2"

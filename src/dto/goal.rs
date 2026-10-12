@@ -1,5 +1,6 @@
 use chrono::{DateTime, Local};
 use database::models::achievement::GoalCreate;
+use schemars::JsonSchema;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Debug, PartialEq)]
@@ -9,7 +10,7 @@ pub struct GoalPayload {
     pub sequence: i32,
 }
 
-#[derive(Serialize, Deserialize, Debug, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, JsonSchema)]
 pub struct GoalUnlockedPayload {
     pub id: i32,
     pub description: String,

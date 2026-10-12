@@ -1,4 +1,5 @@
 use crate::dto::user::UserProfile;
+use aide::axum::ApiRouter;
 use axum::extract::Path;
 use axum::{Json, Router, routing::get};
 use database::Database;
@@ -12,14 +13,14 @@ use crate::extractors::authenticated_user::AuthenticatedUser;
 pub struct UserHandler;
 
 impl UserHandler {
-    pub fn router() -> Router<AppState> {
-        Router::new()
+    pub fn router() -> ApiRouter<AppState> {
+        ApiRouter::new()
             .route("/me", get(Self::current_user))
             .route("/{id}", get(Self::profile).patch(Self::patch))
     }
 
-    async fn current_user(user: AuthenticatedUser) -> Result<Json<AuthenticatedUser>, AppError> {
-        Ok(Json(user))
+    async fn current_user(user: AuthenticatedUser) -> Json<AuthenticatedUser> {
+        Json(user)
     }
 
     async fn profile(

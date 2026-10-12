@@ -1,5 +1,8 @@
+use std::sync::Arc;
+
+use aide::{axum::ApiRouter, openapi::OpenApi};
 use axum::{
-    Router,
+    Extension, Router,
     extract::DefaultBodyLimit,
     middleware::from_extractor,
     routing::{get, patch, post},
@@ -42,17 +45,22 @@ pub async fn start_app(config: AppConfig) -> Result<(), AppError> {
     let db = Database::create_connect_migrate(&config.database_url).await?;
 
     let state = AppState { db, config };
+    let mut api = OpenApi::default();
+
+    aide::generate::extract_schemas(true);
 
     // setup layers
     let sess_store = MemoryStore::default();
     let sess_mw = SessionManagerLayer::new(sess_store).with_same_site(SameSite::Lax);
-    let app = Router::new()
+    let app = ApiRouter::new()
         .nest("/api", api_router())
+        .finish_api(&mut api)
         .layer(sess_mw)
         .layer(DefaultBodyLimit::max(10_485_760))
         .layer(CompressionLayer::new())
         .layer(TraceLayer::new_for_http())
         .layer(CorsLayer::very_permissive())
+        .layer(Extension(Arc::new(api)))
         .with_state(state);
 
     // start server
@@ -64,16 +72,16 @@ pub async fn start_app(config: AppConfig) -> Result<(), AppError> {
     Ok(())
 }
 
-pub fn api_router() -> Router<AppState> {
-    Router::new()
+pub fn api_router() -> ApiRouter<AppState> {
+    ApiRouter::new()
         .merge(open_routes())
         .merge(authenticated_routes())
         .nest("/admin", admin_routes())
         .fallback(get(|| async { StatusCode::NOT_FOUND }))
 }
 
-fn open_routes() -> Router<AppState> {
-    Router::new()
+fn open_routes() -> ApiRouter<AppState> {
+    ApiRouter::new()
         .route("/login", get(AuthHandler::login))
         .route("/oauth/callback", get(AuthHandler::callback))
         .route("/image/{id}", get(ImageHandler::get))
@@ -84,8 +92,8 @@ fn open_routes() -> Router<AppState> {
         )
 }
 
-fn authenticated_routes() -> Router<AppState> {
-    Router::new()
+fn authenticated_routes() -> ApiRouter<AppState> {
+    ApiRouter::new()
         .nest("/users", UserHandler::router())
         .route("/logout", get(AuthHandler::logout))
         .route(
@@ -96,8 +104,8 @@ fn authenticated_routes() -> Router<AppState> {
         .route("/services", get(ServiceHandler::get_user))
 }
 
-fn admin_routes() -> Router<AppState> {
-    Router::new()
+fn admin_routes() -> ApiRouter<AppState> {
+    ApiRouter::new()
         .route(
             "/services",
             get(ServiceHandler::get_admin).post(ServiceHandler::post),
