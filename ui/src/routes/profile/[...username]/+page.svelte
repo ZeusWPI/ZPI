@@ -2,6 +2,7 @@
 	import type { PageData } from './$types';
 	import { Avatar, Heading, Hr } from 'flowbite-svelte';
 	import ChangeImageModal from '#lib/components/ChangeImageModal.svelte';
+	import About from '#lib/components/About.svelte';
 
 	let { data }: { data: PageData } = $props();
 	let user = $derived(data.user);
@@ -17,7 +18,7 @@
 	<div class="relative col-span-2 justify-self-end">
 		<Avatar
 			src={avatarUrl}
-			class="size-72 rounded rounded-3xl"
+			class="size-72 rounded-3xl"
 			border
 		/>
 
@@ -31,6 +32,7 @@
 
 	<div class="col-span-2">
 		<!-- About -->
+		<About {user} />
 	</div>
 
 	<div class="col-span-2">
